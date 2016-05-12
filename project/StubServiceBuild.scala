@@ -1,10 +1,16 @@
 import sbt._
+import uk.gov.hmrc.SbtAutoBuildPlugin
+import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
+import uk.gov.hmrc.versioning.SbtGitVersioning
 
 object StubServiceBuild extends Build with MicroService {
   import scala.util.Properties.envOrElse
 
   val appName = "pla-dynamic-stub"
-  val appVersion = envOrElse("PLA_DYNAMIC_STUB_VERSION", "999-SNAPSHOT")
+
+  override lazy val plugins: Seq[Plugins] = Seq(
+    SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin
+  )
 
   override lazy val appDependencies: Seq[ModuleID] = AppDependencies()
 }

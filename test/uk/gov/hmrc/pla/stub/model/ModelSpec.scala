@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package uk.gov.hmrc.pla.stub.model
 
 import java.time.LocalDateTime
