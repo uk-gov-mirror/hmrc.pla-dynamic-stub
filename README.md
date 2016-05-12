@@ -8,7 +8,7 @@ The stub supports these PLA service API operations:
 
 - `GET /protect-your-lifetime-allowance/individuals/{nino}/protections` - get all pension lifetime allowance protections granted to the individual with the specified NINO
 - `GET /protect-your-lifetime-allowance/individuals/{nino}/protections/{protectionId}` - get a specific protection by NINO and protection ID
-- `POST /protect-your-lifetimei-allowance/individuals/{nino}/protections` - apply for a new protection for the individual with the specified NINO
+- `POST /protect-your-lifetime-allowance/individuals/{nino}/protections` - apply for a new protection for the individual with the specified NINO
 - `PUT /protect-your-lifetime-allowance/individuals/{nino}/protections/{protectionId}` - amend the specified existing protection
 - `GET /psa/check-protection?ref=<protectionReference>&psaref=<psaCheckReference>` - enables pension scheme administrator (PSA) check of validity and amount of a protection
 
