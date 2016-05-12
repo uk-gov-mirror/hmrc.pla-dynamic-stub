@@ -1,5 +1,7 @@
 # Pension Lifetime Allowance (PLA) Dynamic Stub
 
+[![Apache-2.0 license](http://img.shields.io/badge/license-Apache-brightgreen.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
+
 This is a stub for the PLA service. The stub is a test double that supports the PLA service REST API in development or test environments, this enables testing of clients of the service without requiring a full end-to-end test environment that has all the backend services and systems available.
 
 The stub is a Play/Scala application backed by a Mongo database for the test data, which is dynamically created (hence it is termed a dynamic stub, because it does not contain hardcoded, static test data). The test data can be set up either by making requests to the relevant apply or amend operations of the API, or directly loaded into the database using e.g. `mongoimport`. 
