@@ -111,8 +111,8 @@ object FP2016ApplicationRules extends ApplicationRules {
           case _ if pStatus == Dormant && pType == Primary => 18
           case _ if pStatus == Open => pType match {
             case Primary => 18
-            case IP2014 => 23
-            case IP2016 => 24
+            case IP2014 => 24
+            case IP2016 => 23
             case Enhanced => 17
             case Fixed => 19
             case FP2014 => 20

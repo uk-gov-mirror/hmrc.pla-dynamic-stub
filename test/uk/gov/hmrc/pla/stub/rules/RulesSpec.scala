@@ -189,14 +189,14 @@ class FP2016ApplicationRulesSpec extends UnitSpec {
   }
 
   "An application for an FP2016 when an open IP2014 already exists for the individual" should {
-    "return a notification ID of 23" in {
-      FP2016ApplicationRules.check(List(openIP2014)) shouldBe 23
+    "return a notification ID of 24" in {
+      FP2016ApplicationRules.check(List(openIP2014)) shouldBe 24
     }
   }
 
   "An application for an FP2016 when an open IP2016 already exists for the individual" should {
-    "return a notification ID of 24" in {
-      FP2016ApplicationRules.check(List(openIP2016)) shouldBe 24
+    "return a notification ID of 23" in {
+      FP2016ApplicationRules.check(List(openIP2016)) shouldBe 23
     }
   }
 
