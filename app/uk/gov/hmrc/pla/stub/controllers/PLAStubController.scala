@@ -275,7 +275,7 @@ trait PLAStubController extends BaseController {
 
     // certain notifications require changing state of the currently open existing protection to dormant
     val doMaybeUpdateExistingProtection: Future[Any] = notificationID match {
-      case 23 | 24 =>
+      case 23 =>
         val currentlyOpen = existingProtections.find(_.status==Protection.Status.Open.toString)
         currentlyOpen map { openProtection =>
           // amend the protection, giving it a Dormant status & updating the certificate date
