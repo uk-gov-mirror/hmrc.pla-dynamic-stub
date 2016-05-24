@@ -115,6 +115,28 @@ trait PLAStubController extends BaseController {
     )
   }
 
+
+
+
+
+
+  def insertProtection() = Action.async (BodyParsers.parse.json) { implicit request =>
+    val protectionJs = request.body.validate[Protection]
+    protectionJs.fold(
+      errors => Future.successful(BadRequest(Json.toJson(Error(message="body failed validation with errors: " + errors)))),
+      protection =>
+        protectionRepository.insert(protection)
+          .map { _ => Ok }
+          .recover { case exception => Results.InternalServerError(exception.toString) }
+    )
+  }
+
+
+
+
+
+
+
 	def updateProtection(nino: String,
                           protectionId: Long) = Action.async (BodyParsers.parse.json) { implicit request =>
     val protectionAmendmentJs = request.body.validate[ProtectionAmendment]

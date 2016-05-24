@@ -12,3 +12,6 @@ DELETE  /individuals/:nino/protections/:pid   uk.gov.hmrc.pla.stub.controllers.P
 
 # General PSA lookup route
 GET     /psa/check-protection                 uk.gov.hmrc.pla.stub.controllers.PLAStubController.psaLookup(ref,psaref)
+
+# test setup routes
+POST    /protections/insert                   uk.gov.hmrc.pla.stub.controllers.PLAStubController.insertProtection
