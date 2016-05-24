@@ -22,6 +22,7 @@ import play.modules.reactivemongo.MongoDbConnection
 
 import reactivemongo.api.indexes.{IndexType, Index}
 import reactivemongo.api.DB
+import reactivemongo.api.commands.WriteConcern
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.pla.stub.model.Protection
 
@@ -70,6 +71,11 @@ trait ProtectionRepository extends Repository[Protection, BSONObjectID] {
     * Housekeeping op to remove a specific protection (all versions)
     */
   def removeByNinoAndProtectionID(nino: String, protectionId: Long)(implicit ec: ExecutionContext): Future[Unit]
+
+  /**
+    * Housekeeping op to remove all protections
+    */
+  def removeAllProtections()(implicit ec: ExecutionContext): Future[Unit]
 }
 
 class
@@ -117,4 +123,7 @@ MongoProtectionRepository(implicit mongo: () => DB)
 
   override def removeByNinoAndProtectionID(nino: String, protectionId: Long)(implicit ec: ExecutionContext): Future[Unit] =
     remove("nino" -> nino, "protectionID" -> protectionId).map {_ => }
+
+  override def removeAllProtections()(implicit ec: ExecutionContext): Future[Unit] =
+    removeAll(WriteConcern.Acknowledged).map {_ => }
 }
