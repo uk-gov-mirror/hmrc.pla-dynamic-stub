@@ -16,9 +16,7 @@
 
 package uk.gov.hmrc.pla.stub.controllers
 
-import uk.gov.hmrc.pla.stub.model._
 import uk.gov.hmrc.pla.stub.notifications.{CertificateStatus, Notifications}
-import uk.gov.hmrc.pla.stub.rules._
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import play.api.mvc._
@@ -27,13 +25,11 @@ import play.api.libs.json._
 import uk.gov.hmrc.pla.stub.repository.{ProtectionRepository, MongoProtectionRepository}
 import uk.gov.hmrc.pla.stub.model._
 import uk.gov.hmrc.pla.stub.rules._
-import uk.gov.hmrc.pla.stub.notifications._
 
 import scala.Error
 import scala.concurrent.Future
 import scala.util.Random
 import java.time.LocalDateTime
-import reactivemongo.api.commands.WriteConcern
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -116,21 +112,6 @@ trait PLAStubController extends BaseController {
     )
   }
 
-  /**
-    * Stub-only convenience operation to add a protection to test data
-    * @return
-    */
-  def insertProtection() = Action.async (BodyParsers.parse.json) { implicit request =>
-    val protectionJs = request.body.validate[Protection]
-    protectionJs.fold(
-      errors => Future.successful(BadRequest(Json.toJson(Error(message="body failed validation with errors: " + errors)))),
-      protection =>
-        protectionRepository.insert(protection)
-          .map { _ => Ok }
-          .recover { case exception => Results.InternalServerError(exception.toString) }
-    )
-  }
-
 	def updateProtection(nino: String,
                           protectionId: Long) = Action.async (BodyParsers.parse.json) { implicit request =>
     val protectionAmendmentJs = request.body.validate[ProtectionAmendment]
@@ -201,38 +182,6 @@ trait PLAStubController extends BaseController {
         case _ => Ok(Json.toJson(PSALookupResult("Unknown",validResult = false, None)))
       }
     }
-  }
-
-  /**
-    * Stub-only convenience operation to tear down test data
-    * @return
-    */
-  def removeAllProtections() = Action.async { implicit request =>
-    protectionRepository.removeAll(WriteConcern.Acknowledged)
-    Future.successful(Ok)
-  }
-
-  /**
-    * Stub-only convenience operation to tear down test data for a given NINO
-    *
-    * @param nino
-    * @return
-    */
-  def removeProtections(nino: String) = Action.async { implicit request =>
-    protectionRepository.removeByNino(nino: String)
-    Future.successful(Ok)
-  }
-
-  /**
-    * Stub-only convenience operation to tear down test data for a specified protection
-    *
-    * @param nino
-    * @param protectionId
-    * @return
-    */
-  def removeProtection(nino: String, protectionId: Long) = Action.async { implicit request =>
-    protectionRepository.removeByNinoAndProtectionID(nino: String, protectionId)
-    Future.successful(Ok)
   }
 
   // private methods

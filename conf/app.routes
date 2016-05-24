@@ -6,13 +6,5 @@ GET     /individuals/:nino/protections/:pid   uk.gov.hmrc.pla.stub.controllers.P
 POST    /individuals/:nino/protections        uk.gov.hmrc.pla.stub.controllers.PLAStubController.createProtection(nino: String)
 PUT     /individuals/:nino/protections/:pid   uk.gov.hmrc.pla.stub.controllers.PLAStubController.updateProtection(nino:String,pid:Long)
 
-# stub-only housekeeping ops
-DELETE  /individuals/:nino/protections        uk.gov.hmrc.pla.stub.controllers.PLAStubController.removeProtections(nino:String)
-DELETE  /individuals/:nino/protections/:pid   uk.gov.hmrc.pla.stub.controllers.PLAStubController.removeProtection(nino:String,pid:Long)
-
 # General PSA lookup route
 GET     /psa/check-protection                 uk.gov.hmrc.pla.stub.controllers.PLAStubController.psaLookup(ref,psaref)
-
-# test setup routes
-POST    /protections/insert                   uk.gov.hmrc.pla.stub.controllers.PLAStubController.insertProtection
-DELETE  /protections/removeAll                   uk.gov.hmrc.pla.stub.controllers.PLAStubController.removeAllProtections
