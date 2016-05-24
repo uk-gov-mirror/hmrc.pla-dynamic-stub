@@ -15,3 +15,4 @@ GET     /psa/check-protection                 uk.gov.hmrc.pla.stub.controllers.P
 
 # test setup routes
 POST    /protections/insert                   uk.gov.hmrc.pla.stub.controllers.PLAStubController.insertProtection
+DELETE  /protections/removeAll                   uk.gov.hmrc.pla.stub.controllers.PLAStubController.removeAllProtections
