@@ -33,6 +33,7 @@ import scala.Error
 import scala.concurrent.Future
 import scala.util.Random
 import java.time.LocalDateTime
+import reactivemongo.api.commands.WriteConcern
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -115,11 +116,10 @@ trait PLAStubController extends BaseController {
     )
   }
 
-
-
-
-
-
+  /**
+    * Stub-only convenience operation to add a protection to test data
+    * @return
+    */
   def insertProtection() = Action.async (BodyParsers.parse.json) { implicit request =>
     val protectionJs = request.body.validate[Protection]
     protectionJs.fold(
@@ -130,12 +130,6 @@ trait PLAStubController extends BaseController {
           .recover { case exception => Results.InternalServerError(exception.toString) }
     )
   }
-
-
-
-
-
-
 
 	def updateProtection(nino: String,
                           protectionId: Long) = Action.async (BodyParsers.parse.json) { implicit request =>
@@ -207,6 +201,15 @@ trait PLAStubController extends BaseController {
         case _ => Ok(Json.toJson(PSALookupResult("Unknown",validResult = false, None)))
       }
     }
+  }
+
+  /**
+    * Stub-only convenience operation to tear down test data
+    * @return
+    */
+  def removeAllProtections() = Action.async { implicit request =>
+    protectionRepository.removeAll(WriteConcern.Acknowledged)
+    Future.successful(Ok)
   }
 
   /**
