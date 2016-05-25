@@ -122,7 +122,7 @@ trait PLAStubController extends BaseController {
         val calculatedRelevantAmount =
           protectionAmendment.nonUKRights +
             protectionAmendment.postADayBenefitCrystallisationEvents +
-            protectionAmendment.preADayPensionsInPayment +
+            protectionAmendment.preADayPensionInPayment +
             protectionAmendment.uncrystallisedRights
         if (calculatedRelevantAmount != protectionAmendment.relevantAmount) {
           Future.successful(BadRequest(Json.toJson(
@@ -241,7 +241,7 @@ trait PLAStubController extends BaseController {
       notificationMsg = Some(notificationMessage),
       certificateDate = if (successfulApplication) Some(LocalDateTime.now) else None,
       relevantAmount = application.relevantAmount,
-      preADayPensionsInPayment = application.preADayPensionsInPayment,
+      preADayPensionInPayment = application.preADayPensionInPayment,
       postADayBenefitCrystallisationEvents = application.postADayBenefitCrystallisationEvents,
       uncrystallisedRights = application.uncrystallisedRights,
       pensionDebitAmount = application.pensionDebitAmount,
@@ -339,7 +339,7 @@ trait PLAStubController extends BaseController {
           notificationMsg = Some(notificationMessage),
           certificateDate = Some(LocalDateTime.now),
           relevantAmount = Some(amendment.relevantAmount),
-          preADayPensionsInPayment = Some(amendment.preADayPensionsInPayment),
+          preADayPensionInPayment = Some(amendment.preADayPensionInPayment),
           postADayBenefitCrystallisationEvents = Some(amendment.postADayBenefitCrystallisationEvents),
           uncrystallisedRights = Some(amendment.uncrystallisedRights),
           pensionDebitAmount = amendment.pensionDebitAmount,
@@ -381,7 +381,7 @@ trait PLAStubController extends BaseController {
           notificationId = Some(notificationId),
           notificationMsg = Some(notificationMessage),
           relevantAmount = Some(amendment.relevantAmount),
-          preADayPensionsInPayment = Some(amendment.preADayPensionsInPayment),
+          preADayPensionInPayment = Some(amendment.preADayPensionInPayment),
           postADayBenefitCrystallisationEvents = Some(amendment.postADayBenefitCrystallisationEvents),
           uncrystallisedRights = Some(amendment.uncrystallisedRights),
           pensionDebitAmount = amendment.pensionDebitAmount,

@@ -21,10 +21,10 @@ import play.api.libs.json.Json
 case class ProtectionApplication(
   protectionType: Int,
   relevantAmount: Option[Double] = None,
-  preADayPensionsInPayment: Option[Double] = None,
+  preADayPensionInPayment: Option[Double] = None,
   postADayBenefitCrystallisationEvents: Option[Double] = None,
   uncrystallisedRights: Option[Double] = None,
-  pensionDebitAmount: Option[Double] = None,
+  pensionDebitAmount: Option[List[Double]] = None,
   nonUKRights: Option[Double] = None) {
 
   import Protection.Type._
