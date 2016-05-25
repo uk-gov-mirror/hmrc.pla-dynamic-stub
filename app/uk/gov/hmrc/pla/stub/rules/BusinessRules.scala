@@ -45,7 +45,7 @@ trait AmendmentRules {
     * @param otherExistingProtections all existing protections for the individual except the one to be amended
     * @return the outcome of the business rules check in the form of a notification Id: should be >= 1
     */
-  def check(relevantAmount: Double, existingStatus: String, otherExistingProtections: List[Protection]): Short
+  def check(relevantAmount: Double, otherExistingProtections: List[Protection]): Short
 }
 
 // Check Application for an IP2014 protection
@@ -53,7 +53,7 @@ object IP2014ApplicationRules extends ApplicationRules {
   override def check(existingProtections: List[Protection]) = {
     val defaultOutcome=4
     existingProtections.foldLeft(defaultOutcome) { (provisionalOutcome, protection) => {
-        val pStatus = Protection.Status.withName(protection.status)
+        val pStatus = protection.requestedStatus.get
         val pType = protection.requestedType.get
         provisionalOutcome match {
           case id if Notifications.isFailedApplication(id) => provisionalOutcome // propagate failed status
@@ -78,7 +78,7 @@ object IP2016ApplicationRules extends ApplicationRules {
   override def check(existingProtections: List[Protection]) = {
     val defaultOutcome = 12  // default successful outcome
     existingProtections.foldLeft(defaultOutcome) { (provisionalOutcome, protection) => {
-        val pStatus = Protection.Status.withName(protection.status)
+        val pStatus = protection.requestedStatus.get
         val pType = protection.requestedType.get
         provisionalOutcome match {
           case id if Notifications.isFailedApplication(id) => provisionalOutcome  // propagates failed status
@@ -104,7 +104,7 @@ object FP2016ApplicationRules extends ApplicationRules {
   override def check(existingProtections: List[Protection]) = {
     val defaultOutcome = 22 // default successful outcome if no other relevant protections exist
     existingProtections.foldLeft(defaultOutcome) { (provisionalOutcome, protection) => {
-        val pStatus = Protection.Status.withName(protection.status)
+        val pStatus = protection.requestedStatus.get
         val pType = protection.requestedType.get
         provisionalOutcome match {
           case id if Notifications.isFailedApplication(id) => provisionalOutcome  // propagate failed status
@@ -127,7 +127,7 @@ object FP2016ApplicationRules extends ApplicationRules {
 
 // Check amendment of an IP2014 protection
 object IP2014AmendmentRules extends AmendmentRules {
-  override def check(relevantAmount: Double, existingStatus: String, otherExistingProtections: List[Protection]) = {
+  override def check(relevantAmount: Double, otherExistingProtections: List[Protection]) = {
     val doWithdrawProtection = (relevantAmount < 1250001.0)
     val defaultOutcome = if (doWithdrawProtection) 25 else 34
 
@@ -153,7 +153,7 @@ object IP2014AmendmentRules extends AmendmentRules {
 
 // Check amendment of an IP2016 protection
 object IP2016AmendmentRules extends AmendmentRules {
-  override def check(relevantAmount: Double, existingStatus: String, otherExistingProtections: List[Protection]) = {
+  override def check(relevantAmount: Double, otherExistingProtections: List[Protection]) = {
     val doWithdrawProtection = (relevantAmount < 1000001.0)
     val defaultOutcome = if (doWithdrawProtection) 35 else 44
 
