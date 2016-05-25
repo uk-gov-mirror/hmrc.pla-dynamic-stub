@@ -27,7 +27,7 @@ case class Protection(
     nino: String,
     protectionID: Long,
     version: Int,
-    protectionType: String,
+    protectionType: Int,
     status: String,
     notificationId: Option[Short],
     notificationMsg: Option[String], // this field is stored in the DB but excluded from API responses
@@ -40,7 +40,20 @@ case class Protection(
     pensionDebitAmount: Option[Double] = None,
     nonUKRights: Option[Double] = None,
     self: Option[String] = None, // dynamically added when protections are retrieved and returned to clients
-    previousVersions: Option[List[String]] = None) // dynamically added as above
+    previousVersions: Option[List[String]] = None) /* dynamically added as above */ { 
+
+      import Protection.Type._
+      def requestedType: Option[Protection.Type.Value] = protectionType match {
+        case 1 => Some(FP2016)
+        case 2 => Some(IP2014)
+        case 3 => Some(IP2016)
+        case 4 => Some(Primary)
+        case 5 => Some(Enhanced)
+        case 6 => Some(Fixed)
+        case 7 => Some(FP2014)
+        case _ => None
+       }
+    } 
 
 object Protection {
 
@@ -50,6 +63,18 @@ object Protection {
 
   object Type extends Enumeration {
     val Primary, Enhanced, Fixed, FP2014, FP2016, IP2014, IP2016 = Value
+  }
+
+  def extractedType(pType: Type.Value): Int = {
+    pType match {
+      case Type.FP2016   => 1
+      case Type.IP2014   => 2
+      case Type.IP2016   => 3
+      case Type.Primary  => 4
+      case Type.Enhanced => 5
+      case Type.Fixed    => 6
+      case Type.FP2014   => 7
+    }
   }
 
   implicit val localDateTimeReads = Reads[LocalDateTime](js =>

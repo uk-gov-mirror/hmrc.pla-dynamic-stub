@@ -179,7 +179,7 @@ trait PLAStubController extends BaseController {
       result match {
         case Some(protection) if protection.status.contains("Open") =>
           Ok(Json.toJson(PSALookupResult(protection.protectionType,validResult = true, protection.relevantAmount)))
-        case _ => Ok(Json.toJson(PSALookupResult("Unknown",validResult = false, None)))
+        case _ => Ok(Json.toJson(PSALookupResult(0,validResult = false, None)))
       }
     }
   }
@@ -452,14 +452,14 @@ trait PLAStubController extends BaseController {
     * @return
     */
   private def injectMessageParameters(messageTemplate: String,
-                                      protectionType: String,
+                                      protectionType: Int,
                                       relevantAmount: Option[Double],
                                       protectionReference: Option[String],
                                       psaCheckRef: String): String = {
     val injectAmount = relevantAmount map { amount =>
       protectionType match {
-        case "IP2014" => Math.min(amount, 1500000.00)
-        case "IP2016" => Math.min(amount, 1250000.00)
+        case 2 => Math.min(amount, 1500000.00)
+        case 3 => Math.min(amount, 1250000.00)
         case _ => amount
       }
     } getOrElse 0.0

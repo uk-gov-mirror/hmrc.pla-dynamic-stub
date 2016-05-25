@@ -54,7 +54,7 @@ object IP2014ApplicationRules extends ApplicationRules {
     val defaultOutcome=4
     existingProtections.foldLeft(defaultOutcome) { (provisionalOutcome, protection) => {
         val pStatus = Protection.Status.withName(protection.status)
-        val pType = Protection.Type.withName(protection.protectionType)
+        val pType = protection.requestedType.get
         provisionalOutcome match {
           case id if Notifications.isFailedApplication(id) => provisionalOutcome // propagate failed status
           case _ if pStatus==Open => pType match {
@@ -79,7 +79,7 @@ object IP2016ApplicationRules extends ApplicationRules {
     val defaultOutcome = 12  // default successful outcome
     existingProtections.foldLeft(defaultOutcome) { (provisionalOutcome, protection) => {
         val pStatus = Protection.Status.withName(protection.status)
-        val pType = Protection.Type.withName(protection.protectionType)
+        val pType = protection.requestedType.get
         provisionalOutcome match {
           case id if Notifications.isFailedApplication(id) => provisionalOutcome  // propagates failed status
           case _ if  pStatus==Dormant && pType==Primary => 9 //
@@ -105,7 +105,7 @@ object FP2016ApplicationRules extends ApplicationRules {
     val defaultOutcome = 22 // default successful outcome if no other relevant protections exist
     existingProtections.foldLeft(defaultOutcome) { (provisionalOutcome, protection) => {
         val pStatus = Protection.Status.withName(protection.status)
-        val pType = Protection.Type.withName(protection.protectionType)
+        val pType = protection.requestedType.get
         provisionalOutcome match {
           case id if Notifications.isFailedApplication(id) => provisionalOutcome  // propagate failed status
           case _ if pStatus == Dormant && pType == Primary => 18
@@ -135,7 +135,7 @@ object IP2014AmendmentRules extends AmendmentRules {
       _.status == Protection.Status.Open.toString
     }
     otherOpenProtectionOpt map { openProtection: Protection =>
-      (doWithdrawProtection, Protection.Type.withName(openProtection.protectionType)) match {
+      (doWithdrawProtection, openProtection.requestedType.get) match {
         case (true, Enhanced) => 26
         case (true, Fixed) => 27
         case (true, FP2014) => 28
@@ -161,7 +161,7 @@ object IP2016AmendmentRules extends AmendmentRules {
       _.status == Protection.Status.Open.toString
     }
     otherOpenProtectionOpt map { openProtection: Protection =>
-      (doWithdrawProtection, Protection.Type.withName(openProtection.protectionType)) match {
+      (doWithdrawProtection, openProtection.requestedType.get) match {
         case (true, Enhanced) => 36
         case (true, Fixed) => 37
         case (true, FP2014) => 38
