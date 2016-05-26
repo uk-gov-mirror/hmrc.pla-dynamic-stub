@@ -59,6 +59,9 @@ case class Protection(
         case 1 => Some(Open)
         case 2 => Some(Dormant)
         case 3 => Some(Withdrawn)
+        case 4 => Some(Expired)
+        case 5 => Some(Unsuccessful)
+        case 6 => Some(Rejected)
         case _ => None
        }
     } 
