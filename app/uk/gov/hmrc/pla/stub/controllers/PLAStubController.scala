@@ -148,7 +148,7 @@ trait PLAStubController extends BaseController {
                 .map { rules: AmendmentRules =>
                   // apply the rules against any existing protections to determine the notification ID, and then process
                   // the requested amendment according to that ID
-                  val notificationId = rules.check(calculatedRelevantAmount, amendmentTarget.status, existingProtections)
+                  val notificationId = rules.check(calculatedRelevantAmount, existingProtections)
                   processAmendment(nino, amendmentTarget, protectionAmendment, notificationId)
                 }
                 .getOrElse {
@@ -177,9 +177,9 @@ trait PLAStubController extends BaseController {
     protectionRepository.findLatestVersionsOfAllProtectionsByNino(nino).map { (protections: List[Protection]) =>
       val result = protections.find(_.protectionReference.contains(ref))
       result match {
-        case Some(protection) if protection.status.contains("Open") =>
+        case Some(protection) if protection.status == 1 =>
           Ok(Json.toJson(PSALookupResult(protection.protectionType,validResult = true, protection.relevantAmount)))
-        case _ => Ok(Json.toJson(PSALookupResult("Unknown",validResult = false, None)))
+        case _ => Ok(Json.toJson(PSALookupResult(0,validResult = false, None)))
       }
     }
   }
@@ -236,7 +236,7 @@ trait PLAStubController extends BaseController {
       protectionID = Random.nextLong,
       protectionType=application.protectionType,
       protectionReference=protectionReference,
-      status = notificationEntry.status.toString,
+      status = Notifications.extractedStatus(notificationEntry.status),
       notificationId = Some(notificationID),
       notificationMsg = Some(notificationMessage),
       certificateDate = if (successfulApplication) Some(LocalDateTime.now) else None,
@@ -254,7 +254,7 @@ trait PLAStubController extends BaseController {
         currentlyOpen map { openProtection =>
           // amend the protection, giving it a Dormant status & updating the certificate date
           val nowDormantProtection = openProtection.copy(
-            status = Protection.Status.Dormant.toString,
+            status = Protection.extractedStatus(Protection.Status.Dormant),
             version = openProtection.version + 1,
             certificateDate = Some(LocalDateTime.now))
           protectionRepository.insert(nowDormantProtection)
@@ -334,7 +334,7 @@ trait PLAStubController extends BaseController {
           protectionID = Random.nextLong,
           protectionType = amendment.protectionType,
           protectionReference = protectionReference,
-          status = notificationEntry.status.toString,
+          status = Notifications.extractedStatus(notificationEntry.status),
           notificationId = Some(notificationId),
           notificationMsg = Some(notificationMessage),
           certificateDate = Some(LocalDateTime.now),
@@ -352,7 +352,7 @@ trait PLAStubController extends BaseController {
     val amendedProtection = notificationEntry.status match {
 
       case CertificateStatus.Withdrawn =>
-        current.copy(version = current.version + 1, status = Protection.Status.Withdrawn.toString)
+        current.copy(version = current.version + 1, status = Protection.extractedStatus(Protection.Status.Withdrawn))
 
       case _ =>
         val protectionReference: Option[String] = amendment.requestedType
@@ -376,7 +376,7 @@ trait PLAStubController extends BaseController {
           protectionID = current.protectionID,
           protectionType = current.protectionType,
           protectionReference = current.protectionReference,
-          status = notificationEntry.status.toString,
+          status = Notifications.extractedStatus(notificationEntry.status),
           certificateDate = Some(LocalDateTime.now),
           notificationId = Some(notificationId),
           notificationMsg = Some(notificationMessage),
@@ -452,14 +452,14 @@ trait PLAStubController extends BaseController {
     * @return
     */
   private def injectMessageParameters(messageTemplate: String,
-                                      protectionType: String,
+                                      protectionType: Int,
                                       relevantAmount: Option[Double],
                                       protectionReference: Option[String],
                                       psaCheckRef: String): String = {
     val injectAmount = relevantAmount map { amount =>
       protectionType match {
-        case "IP2014" => Math.min(amount, 1500000.00)
-        case "IP2016" => Math.min(amount, 1250000.00)
+        case 2 => Math.min(amount, 1500000.00)
+        case 3 => Math.min(amount, 1250000.00)
         case _ => amount
       }
     } getOrElse 0.0

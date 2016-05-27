@@ -19,7 +19,7 @@ package uk.gov.hmrc.pla.stub.model
 import play.api.libs.json.Json
 
 case class ProtectionApplication(
-  protectionType: String,
+  protectionType: Int,
   relevantAmount: Option[Double] = None,
   preADayPensionsInPayment: Option[Double] = None,
   postADayBenefitCrystallisationEvents: Option[Double] = None,
@@ -29,9 +29,9 @@ case class ProtectionApplication(
 
   import Protection.Type._
   def requestedType: Option[Protection.Type.Value] = protectionType match {
-    case "FP2016" => Some(FP2016)
-    case "IP2014" => Some(IP2014)
-    case "IP2016" => Some(IP2016)
+    case 1 => Some(FP2016)
+    case 2 => Some(IP2014)
+    case 3 => Some(IP2016)
     case _ => None
    }
 }

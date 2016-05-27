@@ -17,7 +17,7 @@
 package uk.gov.hmrc.pla.stub.notifications
 
 object CertificateStatus extends Enumeration {
-  val UnknownStatus, Open, Dormant, Withdrawn, Unsuccessful, Rejected = Value
+  val UnknownStatus, Open, Dormant, Withdrawn, Expired, Unsuccessful, Rejected = Value
 }
 
 object ProtectionType extends Enumeration {
@@ -34,6 +34,18 @@ object Notifications {
     protectionType: ProtectionType.Value = UnknownType,
     status: CertificateStatus.Value=UnknownStatus,
     message: String = "Invalid notification")
+
+  import CertificateStatus._
+  def extractedStatus(pStatus: CertificateStatus.Value): Int = {
+    pStatus match {
+      case Open          => 1
+      case Dormant       => 2
+      case Withdrawn     => 3
+      case Expired       => 4
+      case Unsuccessful  => 5
+      case Rejected      => 6
+    }
+  }
 
   // This table provides the notification entries for each notification ID in sequence -
   // simply use the notification ID as the index into the list to get the relevant entry
