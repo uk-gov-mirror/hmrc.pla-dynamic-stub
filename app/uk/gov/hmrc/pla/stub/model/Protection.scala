@@ -34,10 +34,10 @@ case class Protection(
     protectionReference: Option[String],
     certificateDate: Option[LocalDateTime] = None,
     relevantAmount: Option[Double] = None,
-    preADayPensionsInPayment: Option[Double] = None,
+    preADayPensionInPayment: Option[Double] = None,
     postADayBenefitCrystallisationEvents: Option[Double] = None,
     uncrystallisedRights: Option[Double] = None,
-    pensionDebitAmount: Option[Double] = None,
+    pensionDebitAmount: Option[List[Double]] = None,
     nonUKRights: Option[Double] = None,
     self: Option[String] = None, // dynamically added when protections are retrieved and returned to clients
     previousVersions: Option[List[String]] = None) /* dynamically added as above */ { 
@@ -64,7 +64,7 @@ case class Protection(
         case 6 => Some(Rejected)
         case _ => None
        }
-    } 
+    }
 
 object Protection {
 
