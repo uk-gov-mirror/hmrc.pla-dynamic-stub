@@ -20,7 +20,7 @@ import play.api.libs.json.Json
 
 case class ProtectionAmendment(
   protectionType: Int,
-  status: String,
+  status: Int,
   preADayPensionInPayment: Double,
   postADayBenefitCrystallisationEvents: Double,
   uncrystallisedRights: Double,

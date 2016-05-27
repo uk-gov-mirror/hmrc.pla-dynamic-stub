@@ -28,7 +28,7 @@ case class Protection(
     protectionID: Long,
     version: Int,
     protectionType: Int,
-    status: String,
+    status: Int,
     notificationId: Option[Short],
     notificationMsg: Option[String], // this field is stored in the DB but excluded from API responses
     protectionReference: Option[String],
@@ -53,12 +53,34 @@ case class Protection(
         case 7 => Some(FP2014)
         case _ => None
        }
+
+       import Protection.Status._
+       def requestedStatus: Option[Protection.Status.Value] = status match {
+        case 1 => Some(Open)
+        case 2 => Some(Dormant)
+        case 3 => Some(Withdrawn)
+        case 4 => Some(Expired)
+        case 5 => Some(Unsuccessful)
+        case 6 => Some(Rejected)
+        case _ => None
+       }
     }
 
 object Protection {
 
   object Status extends Enumeration {
-    val Unknown, Open,Dormant,Withdrawn,Unsuccessful,Rejected =Value
+    val Unknown, Open,Dormant,Withdrawn,Expired,Unsuccessful,Rejected =Value
+  }
+
+  def extractedStatus(pStatus: Status.Value): Int = {
+    pStatus match {
+      case Status.Open          => 1
+      case Status.Dormant       => 2
+      case Status.Withdrawn     => 3
+      case Status.Expired       => 4
+      case Status.Unsuccessful  => 5
+      case Status.Rejected      => 6
+    }
   }
 
   object Type extends Enumeration {
