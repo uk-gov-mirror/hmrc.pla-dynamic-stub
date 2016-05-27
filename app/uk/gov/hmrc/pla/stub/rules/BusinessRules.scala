@@ -134,6 +134,7 @@ object IP2014AmendmentRules extends AmendmentRules {
     val otherOpenProtectionOpt = otherExistingProtections.find {
       _.status == Protection.Status.Open.toString
     }
+    println(otherOpenProtectionOpt)
     otherOpenProtectionOpt map { openProtection: Protection =>
       (doWithdrawProtection, openProtection.requestedType.get) match {
         case (true, Enhanced) => 26

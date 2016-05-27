@@ -140,6 +140,18 @@ object ProtectionTestData {
     version = 1,
     certificateDate = Some(LocalDateTime.now))
 
+  val withdrawnPrimary=Protection(
+    nino=randomNino,
+    protectionID=randomProtectionID,
+    protectionType=Protection.extractedType(Protection.Type.Enhanced),
+    status=Protection.extractedStatus(Protection.Status.Withdrawn),
+    notificationId=None,
+    notificationMsg=None,
+    protectionReference=Some(randomOlderProtectionReference),
+    version=1,
+    certificateDate=Some(LocalDateTime.now)
+    )
+
   val rejected = Protection(
     nino=randomNino,
     protectionID=randomProtectionID,
