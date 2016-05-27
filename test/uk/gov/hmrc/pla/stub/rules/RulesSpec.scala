@@ -19,6 +19,7 @@ package uk.gov.hmrc.pla.stub.rules
 import java.util.Random
 
 import uk.gov.hmrc.pla.stub.model.Protection
+import uk.gov.hmrc.pla.stub.model.ProtectionAmendment
 import uk.gov.hmrc.pla.stub.model.Protection.Type._
 import uk.gov.hmrc.play.test.UnitSpec
 import java.util.Random
@@ -356,38 +357,65 @@ class IP2014ApplicationRulesSpec extends UnitSpec {
 }
 
 
-class IP2014AmendmentRulesSpec extends UnitSpec {
+object ProtectionAmendments {
 
-  import Protections._
+  import Generator._
 
-  "An application for an IP2014 when no protections already exist for the individual" should {
-    "return a notification ID of 25" in {
-      IP2014AmendmentRules.check(125000, List()) shouldBe 25
-    }
-  }
-
-  "An application for an IP2014 when an open FP2016 already exists for the individual" should {
-    "return a notification ID of 29" in {
-      IP2014AmendmentRules.check(125000, List(openFP2016)) shouldBe 29
-    }
-  }
-
-  "An application for an IP2014 when openEnhanced protection already exists for the individual" should {
-    "return a notification ID of 26" in {
-      IP2014AmendmentRules.check(125000, List(openEnhanced)) shouldBe 26
-    }
-  }
-
-  "An application for an IP2014 when openFixed protection already exists for the individual" should {
-    "return a notification ID of 27" in {
-      IP2014AmendmentRules.check(125000, List(openFixed)) shouldBe 27
-    }
-  }
-
-  "An application for an IP2014 when openFP2014 protection already exists for the individual" should {
-    "return a notification ID of 28" in {
-      IP2014AmendmentRules.check(125000, List(openFP2014)) shouldBe 28
-    }
-  }
+  val openFP2016=ProtectionAmendment(
+    protectionType=Protection.extractedType(Protection.Type.FP2016),
+    status=Protection.extractedStatus(Protection.Status.Open),
+    preADayPensionInPayment=0,
+    postADayBenefitCrystallisationEvents=0,
+    uncrystallisedRights=0,
+    nonUKRights=0,
+    relevantAmount=1250000,
+    pensionDebitAmount=Some(List()))
 }
 
+class IP2014AmendmentRulesSpec extends UnitSpec {
+
+  import ProtectionAmendments._
+
+  "An amendment for an IP2014 when no protections already exist for the individual and relevantAmount=<1250000" should {
+    "return a notification ID of 25" in {
+      IP2014AmendmentRules.check(1250000, List()) shouldBe 25
+    }
+  }
+
+  "An amendment for an IP2014 when no protections already exist for the individual and relevantAmount>125000" should {
+    "return a notification ID of 34" in {
+      IP2014AmendmentRules.check(1250001, List()) shouldBe 34
+    }
+  }
+
+  // "An amendment for an IP2014 when open FP2016 already exists for the individual" should {
+  //   "return a notification ID of 29" in {
+  //     IP2014AmendmentRules.check(openFP2016.relevantAmount, List(openFP2016)) shouldBe 29
+  //   }
+  // }
+
+}
+
+class IP2016AmendmentRulesSpec extends UnitSpec {
+
+  import ProtectionAmendments._
+
+  "An amendment for an IP2016 when no protections already exist for the individual and relevantAmount=<1000000" should {
+    "return a notification ID of 35" in {
+      IP2016AmendmentRules.check(1000000, List()) shouldBe 35
+    }
+  }
+
+  "An amendment for an IP2016 when no protections already exist for the individual and relevantAmount>1000000" should {
+    "return a notification ID of 44" in {
+      IP2016AmendmentRules.check(1000001, List()) shouldBe 44
+    }
+  }
+
+  // "An amendment for an IP2014 when open FP2016 already exists for the individual" should {
+  //   "return a notification ID of 29" in {
+  //     IP2014AmendmentRules.check(1000000, List(openFP2016)) shouldBe 39
+  //   }
+  // }
+
+}
