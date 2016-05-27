@@ -21,12 +21,12 @@ import play.api.libs.json.Json
 case class ProtectionAmendment(
   protectionType: Int,
   status: Int,
-  preADayPensionsInPayment: Double,
+  preADayPensionInPayment: Double,
   postADayBenefitCrystallisationEvents: Double,
   uncrystallisedRights: Double,
   nonUKRights: Double,
   relevantAmount: Double, // must be sum of the above four fields
-  pensionDebitAmount: Option[Double]) {
+  pensionDebitAmount: Option[List[Double]]) {
 
   import Protection.Type._
   def requestedType: Option[Protection.Type.Value] = protectionType match {
