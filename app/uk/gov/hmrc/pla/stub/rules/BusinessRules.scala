@@ -132,7 +132,7 @@ object IP2014AmendmentRules extends AmendmentRules {
     val defaultOutcome = if (doWithdrawProtection) 25 else 34
 
     val otherOpenProtectionOpt = otherExistingProtections.find {
-      _.status == Protection.Status.Open.toString
+      _.status == Protection.extractedStatus(Protection.Status.Open)
     }
     otherOpenProtectionOpt map { openProtection: Protection =>
       (doWithdrawProtection, openProtection.requestedType.get) match {
@@ -158,7 +158,7 @@ object IP2016AmendmentRules extends AmendmentRules {
     val defaultOutcome = if (doWithdrawProtection) 35 else 44
 
     val otherOpenProtectionOpt = otherExistingProtections.find {
-      _.status == Protection.Status.Open.toString
+      _.status == Protection.extractedStatus(Protection.Status.Open)
     }
     otherOpenProtectionOpt map { openProtection: Protection =>
       (doWithdrawProtection, openProtection.requestedType.get) match {
