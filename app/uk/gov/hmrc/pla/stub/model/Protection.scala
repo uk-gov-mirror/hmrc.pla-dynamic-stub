@@ -27,7 +27,7 @@ case class Protection(
     nino: String,
     protectionID: Long,
     version: Int,
-    protectionType: Int,
+    `type`: Int,
     status: Int,
     notificationId: Option[Short],
     notificationMsg: Option[String], // this field is stored in the DB but excluded from API responses
@@ -35,7 +35,7 @@ case class Protection(
     certificateDate: Option[LocalDateTime] = None,
     relevantAmount: Option[Double] = None,
     preADayPensionInPayment: Option[Double] = None,
-    postADayBenefitCrystallisationEvents: Option[Double] = None,
+    postADayBCE: Option[Double] = None,
     uncrystallisedRights: Option[Double] = None,
     pensionDebitAmount: Option[List[Double]] = None,
     nonUKRights: Option[Double] = None,
@@ -43,7 +43,7 @@ case class Protection(
     previousVersions: Option[List[String]] = None) /* dynamically added as above */ { 
 
       import Protection.Type._
-      def requestedType: Option[Protection.Type.Value] = protectionType match {
+      def requestedType: Option[Protection.Type.Value] = `type` match {
         case 1 => Some(FP2016)
         case 2 => Some(IP2014)
         case 3 => Some(IP2016)
