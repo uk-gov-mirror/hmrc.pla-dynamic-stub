@@ -131,8 +131,6 @@ object IP2014AmendmentRules extends AmendmentRules {
     val doWithdrawProtection = (relevantAmount < 1250001.0)
     val defaultOutcome = if (doWithdrawProtection) 25 else 34
 
-    
-
     val otherOpenProtectionOpt = otherExistingProtections.find {
       _.status == Protection.extractedStatus(Protection.Status.Open)
     }
