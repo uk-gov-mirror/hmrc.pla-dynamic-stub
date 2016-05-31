@@ -43,7 +43,7 @@ object ProtectionTestData {
   val openFP2016=Protection(
     nino=randomNino,
     protectionID=randomProtectionID,
-    protectionType=Protection.extractedType(Protection.Type.FP2016),
+    `type`=Protection.extractedType(Protection.Type.FP2016),
     status=Protection.extractedStatus(Protection.Status.Open),
     notificationId=Some(22),
     notificationMsg=None,
@@ -54,7 +54,7 @@ object ProtectionTestData {
   val openIP2016=Protection(
     nino=randomNino,
     protectionID=randomProtectionID,
-    protectionType=Protection.extractedType(Protection.Type.IP2016),
+    `type`=Protection.extractedType(Protection.Type.IP2016),
     status=Protection.extractedStatus(Protection.Status.Open),
     notificationId=Some(12),
     notificationMsg=None,
@@ -65,7 +65,7 @@ object ProtectionTestData {
   val openFP2014=Protection(
     nino=randomNino,
     protectionID=randomProtectionID,
-    protectionType=Protection.extractedType(Protection.Type.FP2014),
+    `type`=Protection.extractedType(Protection.Type.FP2014),
     status=Protection.extractedStatus(Protection.Status.Open),
     notificationId=None,
     notificationMsg=None,
@@ -77,7 +77,7 @@ object ProtectionTestData {
   val openIP2014=Protection(
     nino=randomNino,
     protectionID=randomProtectionID,
-    protectionType=Protection.extractedType(Protection.Type.IP2014),
+    `type`=Protection.extractedType(Protection.Type.IP2014),
     status=Protection.extractedStatus(Protection.Status.Open),
     notificationId=None,
     notificationMsg=None,
@@ -88,7 +88,7 @@ object ProtectionTestData {
   val openPrimary=Protection(
     nino=randomNino,
     protectionID=randomProtectionID,
-    protectionType=Protection.extractedType(Protection.Type.Primary),
+    `type`=Protection.extractedType(Protection.Type.Primary),
     status=Protection.extractedStatus(Protection.Status.Open),
     notificationId=None,
     notificationMsg=None,
@@ -99,7 +99,7 @@ object ProtectionTestData {
   val openFixed=Protection(
     nino=randomNino,
     protectionID=randomProtectionID,
-    protectionType=Protection.extractedType(Protection.Type.Fixed),
+    `type`=Protection.extractedType(Protection.Type.Fixed),
     status=Protection.extractedStatus(Protection.Status.Open),
     notificationId=None,
     notificationMsg=None,
@@ -110,7 +110,7 @@ object ProtectionTestData {
   val openEnhanced=Protection(
     nino=randomNino,
     protectionID=randomProtectionID,
-    protectionType=Protection.extractedType(Protection.Type.Enhanced),
+    `type`=Protection.extractedType(Protection.Type.Enhanced),
     status=Protection.extractedStatus(Protection.Status.Open),
     notificationId=None,
     notificationMsg=None,
@@ -121,7 +121,7 @@ object ProtectionTestData {
   val dormantPrimary=Protection(
     nino=randomNino,
     protectionID=randomProtectionID,
-    protectionType=Protection.extractedType(Protection.Type.Primary),
+    `type`=Protection.extractedType(Protection.Type.Primary),
     status=Protection.extractedStatus(Protection.Status.Dormant),
     notificationId=None,
     notificationMsg=None,
@@ -132,7 +132,7 @@ object ProtectionTestData {
   val dormantEnhanced=Protection(
     nino=randomNino,
     protectionID=randomProtectionID,
-    protectionType=Protection.extractedType(Protection.Type.Enhanced),
+    `type`=Protection.extractedType(Protection.Type.Enhanced),
     status=Protection.extractedStatus(Protection.Status.Dormant),
     notificationId=None,
     notificationMsg=None,
@@ -143,7 +143,7 @@ object ProtectionTestData {
   val withdrawnPrimary=Protection(
     nino=randomNino,
     protectionID=randomProtectionID,
-    protectionType=Protection.extractedType(Protection.Type.Enhanced),
+    `type`=Protection.extractedType(Protection.Type.Enhanced),
     status=Protection.extractedStatus(Protection.Status.Withdrawn),
     notificationId=None,
     notificationMsg=None,
@@ -155,7 +155,7 @@ object ProtectionTestData {
   val rejected = Protection(
     nino=randomNino,
     protectionID=randomProtectionID,
-    protectionType=Protection.extractedType(Protection.Type.IP2016),
+    `type`=Protection.extractedType(Protection.Type.IP2016),
     status=Protection.extractedStatus(Protection.Status.Rejected),
     notificationId=Some(21),
     notificationMsg=None,
@@ -221,37 +221,37 @@ object ProtectionApplicationTestData {
   import Generator._
 
   val Fp2016 = ProtectionApplication(
-    protectionType=Protection.extractedType(Protection.Type.FP2016),
+    `type`=Protection.extractedType(Protection.Type.FP2016),
     relevantAmount=Some(1250000),
     preADayPensionInPayment=Some(0),
-    postADayBenefitCrystallisationEvents=Some(0),
+    postADayBCE=Some(0),
     uncrystallisedRights=Some(0),
     pensionDebitAmount=Some(List()),
     nonUKRights= Some(0))
 
   val Ip2014 = ProtectionApplication(
-    protectionType=Protection.extractedType(Protection.Type.IP2014),
+    `type`=Protection.extractedType(Protection.Type.IP2014),
     relevantAmount=Some(1250000),
     preADayPensionInPayment=Some(0),
-    postADayBenefitCrystallisationEvents=Some(0),
+    postADayBCE=Some(0),
     uncrystallisedRights=Some(0),
     pensionDebitAmount=Some(List()),
     nonUKRights= Some(0))
 
   val Ip2016 = ProtectionApplication(
-    protectionType=Protection.extractedType(Protection.Type.IP2016),
+    `type`=Protection.extractedType(Protection.Type.IP2016),
     relevantAmount=Some(1250000),
     preADayPensionInPayment=Some(0),
-    postADayBenefitCrystallisationEvents=Some(0),
+    postADayBCE=Some(0),
     uncrystallisedRights=Some(0),
     pensionDebitAmount=Some(List()),
     nonUKRights= Some(0))
 
   val Fp2014 = ProtectionApplication(
-    protectionType=Protection.extractedType(Protection.Type.FP2014),
+    `type`=Protection.extractedType(Protection.Type.FP2014),
     relevantAmount=Some(1250000),
     preADayPensionInPayment=Some(0),
-    postADayBenefitCrystallisationEvents=Some(0),
+    postADayBCE=Some(0),
     uncrystallisedRights=Some(0),
     pensionDebitAmount=Some(List()),
     nonUKRights= Some(0))

@@ -121,7 +121,7 @@ trait PLAStubController extends BaseController {
         // first cross-check relevant amount against total of the breakdown fields, reject if discrepancy found
         val calculatedRelevantAmount =
           protectionAmendment.nonUKRights +
-            protectionAmendment.postADayBenefitCrystallisationEvents +
+            protectionAmendment.postADayBCE +
             protectionAmendment.preADayPensionInPayment +
             protectionAmendment.uncrystallisedRights
         if (calculatedRelevantAmount != protectionAmendment.relevantAmount) {
@@ -134,7 +134,7 @@ trait PLAStubController extends BaseController {
         amendmentTargetFutureOption flatMap {
           case None =>
             Future.successful(NotFound(Json.toJson(Error(message = "protection to amend not found"))))
-          case Some(amendmentTarget) if amendmentTarget.protectionType != protectionAmendment.protectionType =>
+          case Some(amendmentTarget) if amendmentTarget.`type` != protectionAmendment.`type` =>
             val error = Error("specified protection type does not match that of the protection to be amended")
             Future.successful(BadRequest(Json.toJson(error)))
           case Some(amendmentTarget) =>
@@ -178,7 +178,7 @@ trait PLAStubController extends BaseController {
       val result = protections.find(_.protectionReference.contains(ref))
       result match {
         case Some(protection) if protection.status == 1 =>
-          Ok(Json.toJson(PSALookupResult(protection.protectionType,validResult = true, protection.relevantAmount)))
+          Ok(Json.toJson(PSALookupResult(protection.`type`,validResult = true, protection.relevantAmount)))
         case _ => Ok(Json.toJson(PSALookupResult(0,validResult = false, None)))
       }
     }
@@ -220,7 +220,7 @@ trait PLAStubController extends BaseController {
     val notificationMessage =
       injectMessageParameters(
         notificationEntry.message,
-        application.protectionType,
+        application.`type`,
         application.relevantAmount,
         protectionReference,
         genPSACheckRef(nino))
@@ -234,7 +234,7 @@ trait PLAStubController extends BaseController {
       nino = nino,
       version = 1,
       protectionID = Random.nextLong,
-      protectionType=application.protectionType,
+      `type`=application.`type`,
       protectionReference=protectionReference,
       status = Notifications.extractedStatus(notificationEntry.status),
       notificationId = Some(notificationID),
@@ -242,7 +242,7 @@ trait PLAStubController extends BaseController {
       certificateDate = if (successfulApplication) Some(LocalDateTime.now) else None,
       relevantAmount = application.relevantAmount,
       preADayPensionInPayment = application.preADayPensionInPayment,
-      postADayBenefitCrystallisationEvents = application.postADayBenefitCrystallisationEvents,
+      postADayBCE = application.postADayBCE,
       uncrystallisedRights = application.uncrystallisedRights,
       pensionDebitAmount = application.pensionDebitAmount,
       nonUKRights = application.nonUKRights)
@@ -318,7 +318,7 @@ trait PLAStubController extends BaseController {
         val notificationMessage =
           injectMessageParameters(
             notificationEntry.message,
-            current.protectionType,
+            current.`type`,
             Some(amendment.relevantAmount),
             protectionReference,
             genPSACheckRef(nino))
@@ -332,7 +332,7 @@ trait PLAStubController extends BaseController {
           nino = nino,
           version = 1,
           protectionID = Random.nextLong,
-          protectionType = amendment.protectionType,
+          `type` = amendment.`type`,
           protectionReference = protectionReference,
           status = Notifications.extractedStatus(notificationEntry.status),
           notificationId = Some(notificationId),
@@ -340,7 +340,7 @@ trait PLAStubController extends BaseController {
           certificateDate = Some(LocalDateTime.now),
           relevantAmount = Some(amendment.relevantAmount),
           preADayPensionInPayment = Some(amendment.preADayPensionInPayment),
-          postADayBenefitCrystallisationEvents = Some(amendment.postADayBenefitCrystallisationEvents),
+          postADayBCE = Some(amendment.postADayBCE),
           uncrystallisedRights = Some(amendment.uncrystallisedRights),
           pensionDebitAmount = amendment.pensionDebitAmount,
           nonUKRights = Some(amendment.nonUKRights)
@@ -365,7 +365,7 @@ trait PLAStubController extends BaseController {
         val notificationMessage =
           injectMessageParameters(
             notificationEntry.message,
-            current.protectionType,
+            current.`type`,
             Some(amendment.relevantAmount),
             protectionReference,
             genPSACheckRef(nino))
@@ -374,7 +374,7 @@ trait PLAStubController extends BaseController {
           nino = nino,
           version = current.version + 1,
           protectionID = current.protectionID,
-          protectionType = current.protectionType,
+          `type` = current.`type`,
           protectionReference = current.protectionReference,
           status = Notifications.extractedStatus(notificationEntry.status),
           certificateDate = Some(LocalDateTime.now),
@@ -382,7 +382,7 @@ trait PLAStubController extends BaseController {
           notificationMsg = Some(notificationMessage),
           relevantAmount = Some(amendment.relevantAmount),
           preADayPensionInPayment = Some(amendment.preADayPensionInPayment),
-          postADayBenefitCrystallisationEvents = Some(amendment.postADayBenefitCrystallisationEvents),
+          postADayBCE = Some(amendment.postADayBCE),
           uncrystallisedRights = Some(amendment.uncrystallisedRights),
           pensionDebitAmount = amendment.pensionDebitAmount,
           nonUKRights = Some(amendment.nonUKRights))
