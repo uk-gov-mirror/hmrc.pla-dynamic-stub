@@ -356,25 +356,9 @@ class IP2014ApplicationRulesSpec extends UnitSpec {
   }
 }
 
-
-object ProtectionAmendments {
-
-  import Generator._
-
-  val openFP2016=ProtectionAmendment(
-    protectionType=Protection.extractedType(Protection.Type.FP2016),
-    status=Protection.extractedStatus(Protection.Status.Open),
-    preADayPensionInPayment=0,
-    postADayBenefitCrystallisationEvents=0,
-    uncrystallisedRights=0,
-    nonUKRights=0,
-    relevantAmount=1250000,
-    pensionDebitAmount=Some(List()))
-}
-
 class IP2014AmendmentRulesSpec extends UnitSpec {
 
-  import ProtectionAmendments._
+  import Protections._
 
   "An amendment for an IP2014 when no protections already exist for the individual and relevantAmount=<1250000" should {
     "return a notification ID of 25" in {
@@ -388,17 +372,17 @@ class IP2014AmendmentRulesSpec extends UnitSpec {
     }
   }
 
-  // "An amendment for an IP2014 when open FP2016 already exists for the individual" should {
-  //   "return a notification ID of 29" in {
-  //     IP2014AmendmentRules.check(openFP2016.relevantAmount, List(openFP2016)) shouldBe 29
-  //   }
-  // }
+  "An amendment for an IP2014 when open FP2016 already exists for the individual" should {
+    "return a notification ID of 29" in {
+      IP2014AmendmentRules.check(1250000, List(openFP2016)) shouldBe 29
+    }
+  }
 
 }
 
 class IP2016AmendmentRulesSpec extends UnitSpec {
 
-  import ProtectionAmendments._
+  import Protections._
 
   "An amendment for an IP2016 when no protections already exist for the individual and relevantAmount=<1000000" should {
     "return a notification ID of 35" in {
@@ -412,10 +396,10 @@ class IP2016AmendmentRulesSpec extends UnitSpec {
     }
   }
 
-  // "An amendment for an IP2014 when open FP2016 already exists for the individual" should {
-  //   "return a notification ID of 29" in {
-  //     IP2014AmendmentRules.check(1000000, List(openFP2016)) shouldBe 39
-  //   }
-  // }
+  "An amendment for an IP2014 when open FP2016 already exists for the individual" should {
+    "return a notification ID of 29" in {
+      IP2014AmendmentRules.check(1000000, List(openFP2016)) shouldBe 29
+    }
+  }
 
 }
