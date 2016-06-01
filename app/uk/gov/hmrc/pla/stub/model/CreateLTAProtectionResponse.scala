@@ -23,6 +23,6 @@ case class CreateLTAProtectionResponse(
     psaCheckReference: Option[String],
     protection: Protection)
 
-object CreateLTAProtectionReponse {
+object CreateLTAProtectionResponse {
   implicit val createLTAReqormat = Json.format[CreateLTAProtectionResponse]
 }

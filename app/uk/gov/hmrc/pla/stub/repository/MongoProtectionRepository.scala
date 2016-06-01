@@ -85,7 +85,7 @@ MongoProtectionRepository(implicit mongo: () => DB)
 {
 
   override def indexes = Seq(
-    Index(Seq("nino" -> IndexType.Ascending,"protectionID" -> IndexType.Ascending,"version" -> IndexType.Ascending),
+    Index(Seq("nino" -> IndexType.Ascending,"id" -> IndexType.Ascending,"version" -> IndexType.Ascending),
           name = Some("ninoIdAndVersionIdx"),
           unique = true, // this should ensure concurrent amendments can't create two objects with same version
           sparse = true)
@@ -95,7 +95,7 @@ MongoProtectionRepository(implicit mongo: () => DB)
       Future[Map[Long, List[Protection]]] = {
     val allProtectionsFut = find("nino" -> nino)
     allProtectionsFut map { allProtections =>
-      val grouped = allProtections.groupBy[Long](_.protectionID)
+      val grouped = allProtections.groupBy[Long](_.id)
       grouped mapValues { protections => protections.sortBy(_.version).reverse }
     }
   }
