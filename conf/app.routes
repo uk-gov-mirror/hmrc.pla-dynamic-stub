@@ -1,10 +1,10 @@
 # microservice specific routes
 
 # individual (nino) routes
-GET     /individuals/:nino/protections        uk.gov.hmrc.pla.stub.controllers.PLAStubController.readProtections(nino:String)
-GET     /individuals/:nino/protections/:pid   uk.gov.hmrc.pla.stub.controllers.PLAStubController.readProtection(nino:String,pid:Long,version: Option[Int])
-POST    /individuals/:nino/protections        uk.gov.hmrc.pla.stub.controllers.PLAStubController.createProtection(nino: String)
-PUT     /individuals/:nino/protections/:pid   uk.gov.hmrc.pla.stub.controllers.PLAStubController.updateProtection(nino:String,pid:Long)
+GET     /individual/:nino/protection        uk.gov.hmrc.pla.stub.controllers.PLAStubController.readProtections(nino:String)
+GET     /individual/:nino/protection/:pid   uk.gov.hmrc.pla.stub.controllers.PLAStubController.readProtection(nino:String,pid:Long,version: Option[Int])
+POST    /individual/:nino/protection        uk.gov.hmrc.pla.stub.controllers.PLAStubController.createProtection(nino: String)
+PUT     /individual/:nino/protection/:pid   uk.gov.hmrc.pla.stub.controllers.PLAStubController.updateProtection(nino:String,pid:Long)
 
 # General PSA lookup route
 GET     /psa/check-protection                 uk.gov.hmrc.pla.stub.controllers.PLAStubController.psaLookup(ref,psaref)

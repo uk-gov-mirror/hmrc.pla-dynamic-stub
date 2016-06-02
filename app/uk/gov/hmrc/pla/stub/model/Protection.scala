@@ -25,14 +25,15 @@ import scala.util.Random
 
 case class Protection(
     nino: String,
-    protectionID: Long,
+    id: Long,
     version: Int,
     `type`: Int,
     status: Int,
-    notificationId: Option[Short],
+    notificationID: Option[Short],
     notificationMsg: Option[String], // this field is stored in the DB but excluded from API responses
     protectionReference: Option[String],
-    certificateDate: Option[LocalDateTime] = None,
+    certificateDate: Option[String] = None,
+    certificateTime: Option[String] = None,
     relevantAmount: Option[Double] = None,
     preADayPensionInPayment: Option[Double] = None,
     postADayBCE: Option[Double] = None,

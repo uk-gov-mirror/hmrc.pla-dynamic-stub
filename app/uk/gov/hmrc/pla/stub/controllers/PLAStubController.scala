@@ -85,12 +85,12 @@ trait PLAStubController extends BaseController {
   }
 
   def createProtection(nino: String) = Action.async (BodyParsers.parse.json) { implicit request =>
-    val protectionApplicationJs = request.body.validate[ProtectionApplication]
+    val protectionApplicationJs = request.body.validate[CreateLTAProtectionRequest]
     protectionApplicationJs.fold(
       errors => Future.successful(BadRequest(Json.toJson(Error(message="body failed validation with errors: " + errors)))),
-      protectionApplication =>
-        protectionApplication.requestedType
-          .collect {
+      createProtectionRequest =>
+        createProtectionRequest.protection.requestedType
+            .collect {
             // gather the relevant rules
             case Protection.Type.FP2016 => FP2016ApplicationRules
             case Protection.Type.IP2014 => IP2014ApplicationRules
@@ -102,7 +102,7 @@ trait PLAStubController extends BaseController {
             val existingProtectionsFut = protectionRepository.findLatestVersionsOfAllProtectionsByNino(nino)
             existingProtectionsFut flatMap { existingProtections: List[Protection] =>
               val notificationId = appRules.check(existingProtections)
-              processApplication(nino, protectionApplication, notificationId, existingProtections)
+              processApplication(nino, createProtectionRequest.protection, notificationId, existingProtections)
             }
           }
           .getOrElse {
@@ -202,7 +202,7 @@ trait PLAStubController extends BaseController {
     *         error if unsuccessful.
     */
   private def processApplication(nino: String,
-                                 application: ProtectionApplication,
+                                 application: CreateLTAProtectionRequest.ProtectionDetails,
                                  notificationID: Short,
                                  existingProtections: List[Protection]): Future[Result] = {
 
@@ -230,16 +230,20 @@ trait PLAStubController extends BaseController {
       case _ => true
     }
 
+    val currDate = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+    val currTime = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_TIME)
+
     val newProtection = Protection(
       nino = nino,
       version = 1,
-      protectionID = Random.nextLong,
+      id = Random.nextLong,
       `type`=application.`type`,
       protectionReference=protectionReference,
       status = Notifications.extractedStatus(notificationEntry.status),
-      notificationId = Some(notificationID),
+      notificationID = Some(notificationID),
       notificationMsg = Some(notificationMessage),
-      certificateDate = if (successfulApplication) Some(LocalDateTime.now) else None,
+      certificateDate = if (successfulApplication) Some(currDate) else None,
+      certificateTime = if (successfulApplication) Some(currTime) else None,
       relevantAmount = application.relevantAmount,
       preADayPensionInPayment = application.preADayPensionInPayment,
       postADayBCE = application.postADayBCE,
@@ -256,7 +260,8 @@ trait PLAStubController extends BaseController {
           val nowDormantProtection = openProtection.copy(
             status = Protection.extractedStatus(Protection.Status.Dormant),
             version = openProtection.version + 1,
-            certificateDate = Some(LocalDateTime.now))
+            certificateDate = Some(currDate),
+            certificateTime = Some(currTime))
           protectionRepository.insert(nowDormantProtection)
         } getOrElse Future.failed(new Exception("No open protection found, but notification ID indicates one should exist"))
       case _ => Future.successful()  // no update needed for existing protections
@@ -267,7 +272,9 @@ trait PLAStubController extends BaseController {
       done <- protectionRepository.insert(newProtection)
     } yield done
 
-    val responseBody = Json.toJson(newProtection.copy(notificationMsg = None))
+    val response = CreateLTAProtectionResponse(nino = nino, psaCheckReference = None, protection = newProtection.copy(notificationMsg = None))
+
+    val responseBody = Json.toJson(response)
 
     val result = if (successfulApplication) {
       Ok(responseBody)
@@ -327,17 +334,20 @@ trait PLAStubController extends BaseController {
         // this doesn't actually reflect the business rules - in some 'withdrawn' cases we don't create a new
         // protection as below. Instead a dormant one can become open, and we simply update the amendee status to
         // withdrawn
+        val currDate = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+        val currTime = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_TIME)
 
         Some(Protection(
           nino = nino,
           version = 1,
-          protectionID = Random.nextLong,
+          id = Random.nextLong,
           `type` = amendment.`type`,
           protectionReference = protectionReference,
           status = Notifications.extractedStatus(notificationEntry.status),
-          notificationId = Some(notificationId),
+          notificationID = Some(notificationId),
           notificationMsg = Some(notificationMessage),
-          certificateDate = Some(LocalDateTime.now),
+          certificateDate = Some(currDate),
+          certificateTime = Some(currTime),
           relevantAmount = Some(amendment.relevantAmount),
           preADayPensionInPayment = Some(amendment.preADayPensionInPayment),
           postADayBCE = Some(amendment.postADayBCE),
@@ -370,15 +380,19 @@ trait PLAStubController extends BaseController {
             protectionReference,
             genPSACheckRef(nino))
 
+        val currDate = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+        val currTime = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_TIME)
+
         Protection(
           nino = nino,
           version = current.version + 1,
-          protectionID = current.protectionID,
+          id = current.id,
           `type` = current.`type`,
           protectionReference = current.protectionReference,
           status = Notifications.extractedStatus(notificationEntry.status),
-          certificateDate = Some(LocalDateTime.now),
-          notificationId = Some(notificationId),
+          certificateDate = Some(currDate),
+          certificateTime = Some(currTime),
+          notificationID= Some(notificationId),
           notificationMsg = Some(notificationMessage),
           relevantAmount = Some(amendment.relevantAmount),
           preADayPensionInPayment = Some(amendment.preADayPensionInPayment),
@@ -433,9 +447,9 @@ trait PLAStubController extends BaseController {
     protectionOpt map { protection: Protection =>
       // generate previousVersions (if applicable) as well as self field into the result protection
       val previousVersions = Some(protectionVersions.tail map { p =>
-        routes.PLAStubController.readProtection(p.nino, p.protectionID, Some(p.version)).absoluteURL()
+        routes.PLAStubController.readProtection(p.nino, p.id, Some(p.version)).absoluteURL()
       }) filter(_ => setPreviousVersions)
-      val self = Some(routes.PLAStubController.readProtection(protection.nino, protection.protectionID, None).absoluteURL())
+      val self = Some(routes.PLAStubController.readProtection(protection.nino, protection.id, None).absoluteURL())
       protection.copy(self = self, previousVersions = previousVersions, notificationMsg = None)
     }
   }

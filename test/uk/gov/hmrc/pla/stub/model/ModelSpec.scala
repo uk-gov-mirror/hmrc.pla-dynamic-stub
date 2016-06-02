@@ -40,124 +40,136 @@ object ProtectionTestData {
 
   import Generator._
 
+  val currDate = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+  val currTime = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_TIME)
+
   val openFP2016=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.FP2016),
     status=Protection.extractedStatus(Protection.Status.Open),
-    notificationId=Some(22),
+    notificationID=Some(22),
     notificationMsg=None,
     protectionReference=Some(randomFP16ProtectionReference),
     version = 1,
-    certificateDate = Some(LocalDateTime.now))
+    certificateDate = Some(currDate),
+    certificateTime = Some(currTime))
 
   val openIP2016=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.IP2016),
     status=Protection.extractedStatus(Protection.Status.Open),
-    notificationId=Some(12),
+    notificationID=Some(12),
     notificationMsg=None,
     protectionReference=Some(randomFP16ProtectionReference),
     version = 1,
-    certificateDate = Some(LocalDateTime.now))
+    certificateDate = Some(currDate),
+    certificateTime = Some(currTime))
 
   val openFP2014=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.FP2014),
     status=Protection.extractedStatus(Protection.Status.Open),
-    notificationId=None,
+    notificationID=None,
     notificationMsg=None,
     protectionReference=Some(randomFP16ProtectionReference),
     version = 1,
-    certificateDate = Some(LocalDateTime.now))
+    certificateDate = Some(currDate),
+    certificateTime = Some(currTime))
 
 
   val openIP2014=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.IP2014),
     status=Protection.extractedStatus(Protection.Status.Open),
-    notificationId=None,
+    notificationID=None,
     notificationMsg=None,
     protectionReference=Some(randomFP16ProtectionReference),
     version = 1,
-    certificateDate = Some(LocalDateTime.now))
+    certificateDate = Some(currDate),
+    certificateTime = Some(currTime))
 
   val openPrimary=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.Primary),
     status=Protection.extractedStatus(Protection.Status.Open),
-    notificationId=None,
+    notificationID=None,
     notificationMsg=None,
     protectionReference=Some(randomOlderProtectionReference),
     version = 1,
-    certificateDate = Some(LocalDateTime.now))
+    certificateDate = Some(currDate),
+    certificateTime = Some(currTime))
 
   val openFixed=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.Fixed),
     status=Protection.extractedStatus(Protection.Status.Open),
-    notificationId=None,
+    notificationID=None,
     notificationMsg=None,
     protectionReference=Some(randomOlderProtectionReference),
     version = 1,
-    certificateDate = Some(LocalDateTime.now))
+    certificateDate = Some(currDate),
+    certificateTime = Some(currTime))
 
   val openEnhanced=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.Enhanced),
     status=Protection.extractedStatus(Protection.Status.Open),
-    notificationId=None,
+    notificationID=None,
     notificationMsg=None,
     protectionReference=Some(randomOlderProtectionReference),
     version = 1,
-    certificateDate = Some(LocalDateTime.now))
+    certificateDate = Some(currDate),
+    certificateTime = Some(currTime))
 
   val dormantPrimary=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.Primary),
     status=Protection.extractedStatus(Protection.Status.Dormant),
-    notificationId=None,
+    notificationID=None,
     notificationMsg=None,
     protectionReference=Some(randomOlderProtectionReference),
     version = 1,
-    certificateDate = Some(LocalDateTime.now))
+    certificateDate = Some(currDate),
+    certificateTime = Some(currTime))
 
   val dormantEnhanced=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.Enhanced),
     status=Protection.extractedStatus(Protection.Status.Dormant),
-    notificationId=None,
+    notificationID=None,
     notificationMsg=None,
     protectionReference=Some(randomOlderProtectionReference),
     version = 1,
-    certificateDate = Some(LocalDateTime.now))
+    certificateDate = Some(currDate),
+    certificateTime = Some(currTime))
 
   val withdrawnPrimary=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.Enhanced),
     status=Protection.extractedStatus(Protection.Status.Withdrawn),
-    notificationId=None,
+    notificationID=None,
     notificationMsg=None,
     protectionReference=Some(randomOlderProtectionReference),
     version=1,
-    certificateDate=Some(LocalDateTime.now)
-    )
+    certificateDate = Some(currDate),
+    certificateTime = Some(currTime))
 
   val rejected = Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.IP2016),
     status=Protection.extractedStatus(Protection.Status.Rejected),
-    notificationId=Some(21),
+    notificationID=Some(21),
     notificationMsg=None,
     protectionReference=None,
     version = 1)
@@ -220,7 +232,8 @@ object ProtectionApplicationTestData {
 
   import Generator._
 
-  val Fp2016 = ProtectionApplication(
+  import CreateLTAProtectionRequest.ProtectionDetails
+  val Fp2016 = ProtectionDetails(
     `type`=Protection.extractedType(Protection.Type.FP2016),
     relevantAmount=Some(1250000),
     preADayPensionInPayment=Some(0),
@@ -229,7 +242,7 @@ object ProtectionApplicationTestData {
     pensionDebitAmount=Some(List()),
     nonUKRights= Some(0))
 
-  val Ip2014 = ProtectionApplication(
+  val Ip2014 = ProtectionDetails(
     `type`=Protection.extractedType(Protection.Type.IP2014),
     relevantAmount=Some(1250000),
     preADayPensionInPayment=Some(0),
@@ -238,7 +251,7 @@ object ProtectionApplicationTestData {
     pensionDebitAmount=Some(List()),
     nonUKRights= Some(0))
 
-  val Ip2016 = ProtectionApplication(
+  val Ip2016 = ProtectionDetails(
     `type`=Protection.extractedType(Protection.Type.IP2016),
     relevantAmount=Some(1250000),
     preADayPensionInPayment=Some(0),
@@ -247,7 +260,7 @@ object ProtectionApplicationTestData {
     pensionDebitAmount=Some(List()),
     nonUKRights= Some(0))
 
-  val Fp2014 = ProtectionApplication(
+  val Fp2014 = ProtectionDetails(
     `type`=Protection.extractedType(Protection.Type.FP2014),
     relevantAmount=Some(1250000),
     preADayPensionInPayment=Some(0),

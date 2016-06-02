@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.pla.stub.rules
 
+import java.time.LocalDateTime
 import java.util.Random
 
 import uk.gov.hmrc.pla.stub.model.Protection
 import uk.gov.hmrc.pla.stub.model.ProtectionAmendment
 import uk.gov.hmrc.pla.stub.model.Protection.Type._
 import uk.gov.hmrc.play.test.UnitSpec
-import java.util.Random
 
 object Generator {
   import uk.gov.hmrc.domain.Generator
@@ -42,32 +42,35 @@ object Protections {
 
   import Generator._
 
+  val currDate = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+  val currTime = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_TIME)
+
   val openFP2016=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.FP2016),
     status=Protection.extractedStatus(Protection.Status.Open),
-    notificationId=Some(22),
+    notificationID=Some(22),
     notificationMsg=None,
     protectionReference=Some(randomFP16ProtectionReference),
     version = 1)
 
   val openIP2016=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.IP2016),
     status=Protection.extractedStatus(Protection.Status.Open),
-    notificationId=Some(12),
+    notificationID=Some(12),
     notificationMsg=None,
     protectionReference=Some(randomFP16ProtectionReference),
     version = 1)
 
   val openFP2014=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.FP2014),
     status=Protection.extractedStatus(Protection.Status.Open),
-    notificationId=None,
+    notificationID=None,
     notificationMsg=None,
     protectionReference=Some(randomFP16ProtectionReference),
     version = 1)
@@ -75,70 +78,70 @@ object Protections {
 
   val openIP2014=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.IP2014),
     status=Protection.extractedStatus(Protection.Status.Open),
-    notificationId=None,
+    notificationID=None,
     notificationMsg=None,
     protectionReference=Some(randomFP16ProtectionReference),
     version = 1)
 
   val openPrimary=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.Primary),
     status=Protection.extractedStatus(Protection.Status.Open),
-    notificationId=None,
+    notificationID=None,
     notificationMsg=None,
     protectionReference=Some(randomOlderProtectionReference),
     version = 1)
 
   val openFixed=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.Fixed),
     status=Protection.extractedStatus(Protection.Status.Open),
-    notificationId=None,
+    notificationID=None,
     notificationMsg=None,
     protectionReference=Some(randomOlderProtectionReference),
     version = 1)
 
   val openEnhanced=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.Enhanced),
     status=Protection.extractedStatus(Protection.Status.Open),
-    notificationId=None,
+    notificationID=None,
     notificationMsg=None,
     protectionReference=Some(randomOlderProtectionReference),
     version = 1)
 
   val dormantPrimary=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.Primary),
     status=Protection.extractedStatus(Protection.Status.Dormant),
-    notificationId=None,
+    notificationID=None,
     notificationMsg=None,
     protectionReference=Some(randomOlderProtectionReference),
     version = 1)
 
   val dormantEnhanced=Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.Enhanced),
     status=Protection.extractedStatus(Protection.Status.Dormant),
-    notificationId=None,
+    notificationID=None,
     notificationMsg=None,
     protectionReference=Some(randomOlderProtectionReference),
     version = 1)
 
   val rejected = Protection(
     nino=randomNino,
-    protectionID=randomProtectionID,
+    id=randomProtectionID,
     `type`=Protection.extractedType(Protection.Type.IP2016),
     status=Protection.extractedStatus(Protection.Status.Rejected),
-    notificationId=Some(21),
+    notificationID=Some(21),
     notificationMsg=None,
     protectionReference=None,
     version = 1)
