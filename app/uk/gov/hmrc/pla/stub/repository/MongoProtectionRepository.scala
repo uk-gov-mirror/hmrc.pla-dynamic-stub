@@ -76,6 +76,11 @@ trait ProtectionRepository extends Repository[Protection, BSONObjectID] {
     * Housekeeping op to remove all protections
     */
   def removeAllProtections()(implicit ec: ExecutionContext): Future[Unit]
+
+  /**
+    * Housekeeping op to remove protections collection
+    */
+  def removeProtectionsCollection()(implicit ec: ExecutionContext): Future[Boolean]
 }
 
 class
@@ -126,4 +131,7 @@ MongoProtectionRepository(implicit mongo: () => DB)
 
   override def removeAllProtections()(implicit ec: ExecutionContext): Future[Unit] =
     removeAll(WriteConcern.Acknowledged).map {_ => }
+
+  override def removeProtectionsCollection()(implicit ec: ExecutionContext): Future[Boolean] =
+    drop(ec)
 }

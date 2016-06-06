@@ -85,4 +85,14 @@ trait TestSetupController extends BaseController {
     Future.successful(Ok)
   }
 
+  /**
+    * Stub-only convenience operation to tear down test data for a specified protection
+    *
+    * @return
+    */
+  def dropProtectionsCollection() = Action.async { implicit request =>
+    protectionRepository.removeProtectionsCollection()
+    Future.successful(Ok)
+  }
+
 }
