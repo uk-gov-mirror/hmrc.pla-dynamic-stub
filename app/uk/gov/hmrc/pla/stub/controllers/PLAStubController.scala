@@ -85,9 +85,13 @@ trait PLAStubController extends BaseController {
   }
 
   def createProtection(nino: String) = Action.async (BodyParsers.parse.json) { implicit request =>
-    val protectionApplicationJs = request.body.validate[CreateLTAProtectionRequest]
+
+    val protectionApplicationBodyJs = request.body.validate[CreateLTAProtectionRequest]
+    val headers = request.headers.toSimpleMap
+    val protectionApplicationJs = ControllerHelper.addExtraRequestHeaderChecks(headers, protectionApplicationBodyJs)
+
     protectionApplicationJs.fold(
-      errors => Future.successful(BadRequest(Json.toJson(Error(message="body failed validation with errors: " + errors)))),
+      errors => Future.successful(BadRequest(Json.toJson(Error(message="Request to crete protection failed with validation errors: " + errors)))),
       createProtectionRequest =>
         createProtectionRequest.protection.requestedType
             .collect {
@@ -484,3 +488,38 @@ trait PLAStubController extends BaseController {
       .replace("#{psa_reference}",psaCheckRef)
   }
 }
+
+object ControllerHelper {
+  /*
+   * Checks that the standard extra headers required for NPS requests are present in a request
+   * @param headers a simple map of all request headers
+   * @param the result of validating the request body
+   * @rreturn the overall validation result, of non-success then will include both body and  header validation errors
+   */
+  def  addExtraRequestHeaderChecks[T](headers: Map[String,String], bodyValidationResultJs: JsResult[T]): JsResult[T] = {
+    val environment = headers.get("Environment")
+    val token = headers.get("Authorization")
+    val notSet = "<NOT SET>"
+    play.Logger.info("Request headers: environment =" + environment.getOrElse(notSet) + ", authorisation=" + token.getOrElse(notSet))
+
+    //  Ensure any header validation errors are accumulated with any body validation errors into a single JsError
+    //  (the below code is not so nice, could be a good use case for scalaz validation)
+    val noAuthHeaderErr = JsError("required header 'Authorisation' not set in NPS request")
+    val noEnvHeaderErr = JsError("required header 'Environment' not set in NPS request")
+    // 1. accumlate any header errors
+    def headerNotPresentErrors: Option[JsError] = (environment, token) match {
+      case (Some(_), Some(_)) => None
+      case (Some(_), None) =>   Some(noAuthHeaderErr)
+      case (None, Some(_)) => Some(noEnvHeaderErr)
+      case (None, None) => Some(noAuthHeaderErr ++ noEnvHeaderErr)
+    }
+    // 2. accumulate any header + any body errors
+    (bodyValidationResultJs, headerNotPresentErrors) match {
+      case (e1: JsError, e2: Some[JsError]) => e1 ++ e2.get
+      case (e1: JsError, _) => e1
+      case (_, e2: Some[JsError]) => e2.get
+      case _ => bodyValidationResultJs // success case
+    }
+  }
+}
+
