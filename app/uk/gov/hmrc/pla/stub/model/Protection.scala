@@ -35,13 +35,16 @@ case class Protection(
     certificateDate: Option[String] = None,
     certificateTime: Option[String] = None,
     relevantAmount: Option[Double] = None,
+    protectectedAmount: Option[Double] = None,
     preADayPensionInPayment: Option[Double] = None,
     postADayBCE: Option[Double] = None,
     uncrystallisedRights: Option[Double] = None,
-    pensionDebitAmount: Option[List[Double]] = None,
     nonUKRights: Option[Double] = None,
-    self: Option[String] = None, // dynamically added when protections are retrieved and returned to clients
-    previousVersions: Option[List[String]] = None) /* dynamically added as above */ { 
+    pensionDebiitEnteredAmount: Option[Double] = None,
+    pensionDebitStartDate: Option[Double] = None,
+    pensionDebitTotalAmount: Option[Double] = None,
+    pensionDebits: Option[List[PensionDebit]] = None,
+    previousVersions: Option[List[String]] = None) /* not stored on DB - dynamically generated and added to response */ {
 
       import Protection.Type._
       def requestedType: Option[Protection.Type.Value] = `type` match {
@@ -113,5 +116,5 @@ object Protection {
 
   implicit val localDateTimeFormat = Format(localDateTimeReads, localDateTimeWrites)
 
-  implicit lazy val protectionFormat = Json.format[Protection]
+  implicit lazy val protectionFormat: Format[Protection] = Json.format[Protection]
 }

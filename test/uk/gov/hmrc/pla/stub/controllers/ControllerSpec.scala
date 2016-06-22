@@ -37,6 +37,7 @@ object TestData {
   val emptyHeadersExample = Map[String,String]()
   val invalidRequestJsError = JsError("invalid request body")
 }
+
 class PLAStubControllerSpec extends UnitSpec {
   "The validation results for a valid CreateProtectionRequest and valid headers should be a success" should {
     "return a valid request object" in {
