@@ -20,7 +20,7 @@ import play.api.libs.json.Json
 
 case class CreateLTAProtectionResponse(
     nino: String,
-    psaCheckReference: Option[String],
+    pensionSchemeAdministratorCheckReference: Option[String],
     protection: Protection)
 
 object CreateLTAProtectionResponse {
