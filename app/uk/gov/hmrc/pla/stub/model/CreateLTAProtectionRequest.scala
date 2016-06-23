@@ -21,7 +21,8 @@ import play.api.libs.json.{Json, Format}
 
 case class CreateLTAProtectionRequest(
   nino: String,
-  protection: CreateLTAProtectionRequest.ProtectionDetails)
+  protection: CreateLTAProtectionRequest.ProtectionDetails,
+  pensionDebits: Option[List[PensionDebit]] = None)
 
 object CreateLTAProtectionRequest {
   implicit val createLTARequestFormat: Format[CreateLTAProtectionRequest] = Json.format[CreateLTAProtectionRequest]
@@ -33,8 +34,8 @@ object CreateLTAProtectionRequest {
                                 preADayPensionInPayment: Option[Double] = None,
                                 postADayBCE: Option[Double] = None,
                                 uncrystallisedRights: Option[Double] = None,
-                                pensionDebitAmount: Option[List[Double]] = None,
-                                nonUKRights: Option[Double] = None) {
+                                nonUKRights: Option[Double] = None,
+                                pensionDebits: Option[List[PensionDebit]]) {
 
     import uk.gov.hmrc.pla.stub.model.Protection.Type._
 
@@ -45,4 +46,5 @@ object CreateLTAProtectionRequest {
       case _ => None
     }
   }
+
 }

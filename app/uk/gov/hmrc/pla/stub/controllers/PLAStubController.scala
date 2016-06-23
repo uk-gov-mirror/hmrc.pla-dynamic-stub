@@ -62,7 +62,7 @@ trait PLAStubController extends BaseController {
 
       val psaCheckRef=genPSACheckRef(nino)
 
-      val result = Protections(nino, psaCheckRef, resultProtections.toList)
+      val result = Protections(nino, Some(psaCheckRef), resultProtections.toList)
       Ok(Json.toJson(result))
     }
 	}
@@ -252,7 +252,7 @@ trait PLAStubController extends BaseController {
       preADayPensionInPayment = application.preADayPensionInPayment,
       postADayBCE = application.postADayBCE,
       uncrystallisedRights = application.uncrystallisedRights,
-      pensionDebitAmount = application.pensionDebitAmount,
+      pensionDebits= application.pensionDebits,
       nonUKRights = application.nonUKRights)
 
     // certain notifications require changing state of the currently open existing protection to dormant
@@ -276,7 +276,7 @@ trait PLAStubController extends BaseController {
       done <- protectionRepository.insert(newProtection)
     } yield done
 
-    val response = CreateLTAProtectionResponse(nino = nino, psaCheckReference = None, protection = newProtection.copy(notificationMsg = None))
+    val response = CreateLTAProtectionResponse(nino = nino, pensionSchemeAdministratorCheckReference = None, protection = newProtection.copy(notificationMsg = None))
 
     val responseBody = Json.toJson(response)
 
@@ -356,7 +356,7 @@ trait PLAStubController extends BaseController {
           preADayPensionInPayment = Some(amendment.preADayPensionInPayment),
           postADayBCE = Some(amendment.postADayBCE),
           uncrystallisedRights = Some(amendment.uncrystallisedRights),
-          pensionDebitAmount = amendment.pensionDebitAmount,
+          pensionDebits = amendment.pensionDebits,
           nonUKRights = Some(amendment.nonUKRights)
         ))
 
@@ -402,7 +402,7 @@ trait PLAStubController extends BaseController {
           preADayPensionInPayment = Some(amendment.preADayPensionInPayment),
           postADayBCE = Some(amendment.postADayBCE),
           uncrystallisedRights = Some(amendment.uncrystallisedRights),
-          pensionDebitAmount = amendment.pensionDebitAmount,
+          pensionDebits = amendment.pensionDebits,
           nonUKRights = Some(amendment.nonUKRights))
     }
 
@@ -450,11 +450,11 @@ trait PLAStubController extends BaseController {
       version.fold(protectionVersions.headOption)(v => protectionVersions.find(_.version == v))
     protectionOpt map { protection: Protection =>
       // generate previousVersions (if applicable) as well as self field into the result protection
-      val previousVersions = Some(protectionVersions.tail map { p =>
+      val previousVersionList = Some(protectionVersions.tail map { p =>
         routes.PLAStubController.readProtection(p.nino, p.id, Some(p.version)).absoluteURL()
       }) filter(_ => setPreviousVersions)
-      val self = Some(routes.PLAStubController.readProtection(protection.nino, protection.id, None).absoluteURL())
-      protection.copy(self = self, previousVersions = previousVersions, notificationMsg = None)
+      // val self = Some(routes.PLAStubController.readProtection(protection.nino, protection.id, None).absoluteURL())
+      protection.copy(previousVersions = previousVersionList, notificationMsg = None)
     }
   }
 
