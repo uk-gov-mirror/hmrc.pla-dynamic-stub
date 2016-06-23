@@ -276,7 +276,7 @@ trait PLAStubController extends BaseController {
       done <- protectionRepository.insert(newProtection)
     } yield done
 
-    val response = CreateLTAProtectionResponse(nino = nino, psaCheckReference = None, protection = newProtection.copy(notificationMsg = None))
+    val response = CreateLTAProtectionResponse(nino = nino, pensionSchemeAdministratorCheckReference = None, protection = newProtection.copy(notificationMsg = None))
 
     val responseBody = Json.toJson(response)
 
