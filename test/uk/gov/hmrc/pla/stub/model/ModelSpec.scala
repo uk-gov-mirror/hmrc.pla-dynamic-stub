@@ -55,6 +55,19 @@ object ProtectionTestData {
     certificateDate = Some(currDate),
     certificateTime = Some(currTime))
 
+  val openFP2016WithPensionDebits=Protection(
+    nino=randomNino,
+    id=randomProtectionID,
+    `type`=Protection.extractedType(Protection.Type.FP2016),
+    status=Protection.extractedStatus(Protection.Status.Open),
+    notificationID=Some(22),
+    notificationMsg=None,
+    protectionReference=Some(randomFP16ProtectionReference),
+    version = 1,
+    pensionDebits=Some(List(PensionDebit(100000.0,"29-8-2016"), PensionDebit(250000.0,"12-03-2017"))),
+    certificateDate = Some(currDate),
+    certificateTime = Some(currTime))
+
   val openIP2016=Protection(
     nino=randomNino,
     id=randomProtectionID,
@@ -78,7 +91,6 @@ object ProtectionTestData {
     version = 1,
     certificateDate = Some(currDate),
     certificateTime = Some(currTime))
-
 
   val openIP2014=Protection(
     nino=randomNino,
@@ -187,6 +199,15 @@ class ProtectionsFormatSpec extends UnitSpec {
     }
   }
 
+  "FP2016 with pension debits json read and write functions" should {
+    "be an isomorphic pair" in {
+      val json = Json.toJson(openFP2016WithPensionDebits)
+      val parsedProtection = Json.fromJson[Protection](json)
+      parsedProtection.get shouldEqual openFP2016WithPensionDebits
+    }
+  }
+
+
   "IP2016 json read and write functions" should {
     "be an isomorphic pair" in {
       val json = Json.toJson(openIP2016)
@@ -250,6 +271,7 @@ object ProtectionApplicationTestData {
     uncrystallisedRights=Some(0),
     pensionDebits=None,
     nonUKRights= Some(0))
+
 
   val Ip2016 = ProtectionDetails(
     `type`=Protection.extractedType(Protection.Type.IP2016),

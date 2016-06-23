@@ -15,11 +15,10 @@
  */
 
 package uk.gov.hmrc.pla.stub.model
+
 import play.api.libs.json.Json
 
-case class PensionDebit(
-  pensionDebitEnteredAmount: Double,
-  pensionDebitStartDate: String)
+case class PensionDebit(amount: Double, startDate: String)
 
 object PensionDebit {
   implicit val pdFormat = Json.format[PensionDebit]
