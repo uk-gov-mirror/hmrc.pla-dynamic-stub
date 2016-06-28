@@ -23,7 +23,7 @@ import play.api.libs.json.Json
   */
 case class Protections(
     nino: String,
-    pensionSchemeAdministratorrCheckReference: Option[String] = None,
+    pensionSchemeAdministratorCheckReference: Option[String] = None,
     lifetimeAllowanceProtections: List[Protection])
 
 object Protections {
