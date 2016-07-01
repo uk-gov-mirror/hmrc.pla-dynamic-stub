@@ -24,7 +24,7 @@ import play.api.libs.json.Json
 case class Protections(
     nino: String,
     pensionSchemeAdministratorCheckReference: Option[String] = None,
-    lifetimeAllowanceProtections: List[Protection])
+    protections: List[Protection])
 
 object Protections {
   implicit val protectionsFormat = Json.format[Protections]
