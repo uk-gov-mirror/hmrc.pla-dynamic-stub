@@ -217,7 +217,7 @@ trait PLAStubController extends BaseController {
     val protectionReference: Option[String] = notificationID match {
       case 4 => Some(("IP14" + Math.abs(Random.nextLong)).substring(0,9) + "A")
       case 12 => Some(("IP16" + Math.abs(Random.nextLong)).substring(0,9) + "B")
-      case 22 | 23 | 24 =>  Some(("FP16" + Math.abs(Random.nextLong)).substring(0,9) + "C")
+      case 22 | 23 =>  Some(("FP16" + Math.abs(Random.nextLong)).substring(0,9) + "C")
       case _ => None
     }
 
