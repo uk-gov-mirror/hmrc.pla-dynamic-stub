@@ -215,7 +215,7 @@ trait PLAStubController extends BaseController {
     // generate some validly formatted protection reference, if the notification ID indicates a scenario where one is
     // expected
     val protectionReference: Option[String] = notificationID match {
-      case 4 => Some(("IP14" + Math.abs(Random.nextLong)).substring(0,9) + "A")
+      case 4 | 8 => Some(("IP14" + Math.abs(Random.nextLong)).substring(0,9) + "A")
       case 12 => Some(("IP16" + Math.abs(Random.nextLong)).substring(0,9) + "B")
       case 22 | 23 =>  Some(("FP16" + Math.abs(Random.nextLong)).substring(0,9) + "C")
       case _ => None
