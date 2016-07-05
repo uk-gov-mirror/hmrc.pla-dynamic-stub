@@ -279,6 +279,17 @@ trait PLAStubController extends BaseController {
             certificateTime = Some(currTime))
           protectionRepository.insert(nowWithdrawnProtection)
         } getOrElse Future.failed(new Exception("No open protection found, but notification ID indicates one should exist"))
+      case 8 =>
+        val currentlyOpen = existingProtections.find(_.status==Protection.extractedStatus(Protection.Status.Open))
+        currentlyOpen map { openProtection =>
+          // amend the protection, giving it a Dormant status & updating the certificate date
+          val nowDormantProtection = openProtection.copy(
+            status = Protection.extractedStatus(Protection.Status.Dormant),
+            version = openProtection.version + 1,
+            certificateDate = Some(currDate),
+            certificateTime = Some(currTime))
+          protectionRepository.insert(nowDormantProtection)
+        } getOrElse Future.failed(new Exception("No open protection found, but notification ID indicates one should exist"))
       case _ => Future.successful()  // no update needed for existing protections
     }
 
