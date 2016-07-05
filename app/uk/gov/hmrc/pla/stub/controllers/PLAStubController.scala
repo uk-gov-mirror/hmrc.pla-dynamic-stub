@@ -215,7 +215,7 @@ trait PLAStubController extends BaseController {
     // generate some validly formatted protection reference, if the notification ID indicates a scenario where one is
     // expected
     val protectionReference: Option[String] = notificationID match {
-      case 4 | 8 => Some(("IP14" + Math.abs(Random.nextLong)).substring(0,9) + "A")
+      case 3 | 4 | 8 => Some(("IP14" + Math.abs(Random.nextLong)).substring(0,9) + "A")
       case 12 => Some(("IP16" + Math.abs(Random.nextLong)).substring(0,9) + "B")
       case 22 | 23 =>  Some(("FP16" + Math.abs(Random.nextLong)).substring(0,9) + "C")
       case _ => None
@@ -267,6 +267,17 @@ trait PLAStubController extends BaseController {
             certificateDate = Some(currDate),
             certificateTime = Some(currTime))
           protectionRepository.insert(nowDormantProtection)
+        } getOrElse Future.failed(new Exception("No open protection found, but notification ID indicates one should exist"))
+      case 3 =>
+        val currentlyOpen = existingProtections.find(_.status==Protection.extractedStatus(Protection.Status.Open))
+        currentlyOpen map { openProtection =>
+          // amend the protection, giving it a Withdrawn status & updating the certificate date
+          val nowWithdrawnProtection = openProtection.copy(
+            status = Protection.extractedStatus(Protection.Status.Withdrawn),
+            version = openProtection.version + 1,
+            certificateDate = Some(currDate),
+            certificateTime = Some(currTime))
+          protectionRepository.insert(nowWithdrawnProtection)
         } getOrElse Future.failed(new Exception("No open protection found, but notification ID indicates one should exist"))
       case _ => Future.successful()  // no update needed for existing protections
     }
