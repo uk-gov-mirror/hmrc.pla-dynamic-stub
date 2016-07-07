@@ -299,7 +299,7 @@ trait PLAStubController extends BaseController {
       done <- protectionRepository.insert(newProtection)
     } yield done
 
-    val response = CreateLTAProtectionResponse(nino = nino, pensionSchemeAdministratorCheckReference = None, protection = newProtection.copy(notificationMsg = None))
+    val response = CreateLTAProtectionResponse(nino = nino, pensionSchemeAdministratorCheckReference = Some(genPSACheckRef(nino)), protection = newProtection.copy(notificationMsg = None))
 
     val responseBody = Json.toJson(response)
 
@@ -453,7 +453,7 @@ trait PLAStubController extends BaseController {
   private def genPSACheckRef(nino: String) = {
     val d1d2 = ninoChar2TwoDigits(nino.charAt(0))
     val d3d4 = ninoChar2TwoDigits(nino.charAt(1))
-    "PSA" + d1d2 + d3d4 + nino.substring(2,7) + randomLastPSAChar
+    "PSA" + d1d2 + d3d4 + nino.substring(2,7) + nino.head
   }
 
   /**
