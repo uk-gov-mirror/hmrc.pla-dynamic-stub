@@ -249,6 +249,7 @@ trait PLAStubController extends BaseController {
       certificateDate = if (successfulApplication) Some(currDate) else None,
       certificateTime = if (successfulApplication) Some(currTime) else None,
       relevantAmount = application.relevantAmount,
+      protectedAmount = application.relevantAmount,
       preADayPensionInPayment = application.preADayPensionInPayment,
       postADayBCE = application.postADayBCE,
       uncrystallisedRights = application.uncrystallisedRights,

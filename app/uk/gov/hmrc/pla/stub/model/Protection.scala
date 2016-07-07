@@ -35,7 +35,7 @@ case class Protection(
     certificateDate: Option[String] = None,
     certificateTime: Option[String] = None,
     relevantAmount: Option[Double] = None,
-    protectectedAmount: Option[Double] = None,
+    protectedAmount: Option[Double] = None,
     preADayPensionInPayment: Option[Double] = None,
     postADayBCE: Option[Double] = None,
     uncrystallisedRights: Option[Double] = None,
