@@ -22,7 +22,7 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 import play.api.mvc._
 import play.api.libs.json._
 
-import uk.gov.hmrc.pla.stub.repository.{ProtectionRepository, MongoProtectionRepository}
+import uk.gov.hmrc.pla.stub.repository.{MongoExceptionTriggerRepository, ExceptionTriggerRepository, ProtectionRepository, MongoProtectionRepository}
 import uk.gov.hmrc.pla.stub.model._
 import uk.gov.hmrc.pla.stub.rules._
 
@@ -39,11 +39,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object PLAStubController extends PLAStubController {
   override val protectionRepository = MongoProtectionRepository()
+  override val exceptionTriggerRepository = MongoExceptionTriggerRepository()
 }
 
 trait PLAStubController extends BaseController {
 
 	val protectionRepository: ProtectionRepository
+  val exceptionTriggerRepository: ExceptionTriggerRepository
 
   /**
     * Get all current protections applicable to the specified Nino
@@ -53,34 +55,43 @@ trait PLAStubController extends BaseController {
     **/
 
 	def readProtections(nino: String) = Action.async { implicit request =>
-    protectionRepository.findAllVersionsOfAllProtectionsByNino(nino).map { (protections: Map[Long,List[Protection]]) =>
 
-      // get all current protections in the form expected in the result
-      val resultProtections = protections.values
-        .map { p => toResultProtection(p, None, setPreviousVersions = true) }
-        .collect { case Some(protection) => protection }
+    exceptionTriggerRepository.findExceptionTriggerByNino(nino).flatMap {
+      case Some(trigger) => processExceptionTrigger(trigger)
+      case None => protectionRepository.findAllVersionsOfAllProtectionsByNino(nino).map { (protections: Map[Long,List[Protection]]) =>
 
-      val psaCheckRef=genPSACheckRef(nino)
+        // get all current protections in the form expected in the result
+        val resultProtections = protections.values
+          .map { p => toResultProtection(p, None, setPreviousVersions = true) }
+          .collect { case Some(protection) => protection }
 
-      val result = Protections(nino, Some(psaCheckRef), resultProtections.toList)
-      Ok(Json.toJson(result))
+        val psaCheckRef=genPSACheckRef(nino)
+
+        val result = Protections(nino, Some(psaCheckRef), resultProtections.toList)
+        Ok(Json.toJson(result))
+      }
     }
+
 	}
 
   def readProtection(nino: String, protectionId: Long, version: Option[Int]) = Action.async { implicit request =>
-    protectionRepository.findAllVersionsOfProtectionByNinoAndId(nino,protectionId) map { protectionHistory: List[Protection] =>
-      toResultProtection(protectionHistory, version, setPreviousVersions = !version.isDefined)
-        .map { result =>
-          Ok(Json.toJson(result))
-        }
-        .getOrElse {
-          // no matching protection
-          val error = protectionHistory match {
-            case Nil => Error("no protection found for specified protection id")
-            case _ => Error("protection of specified id found, but no match for specified version")
+
+    exceptionTriggerRepository.findExceptionTriggerByNino(nino).flatMap {
+      case Some(trigger) => processExceptionTrigger(trigger)
+      case None => protectionRepository.findAllVersionsOfProtectionByNinoAndId(nino, protectionId) map { protectionHistory: List[Protection] =>
+        toResultProtection(protectionHistory, version, setPreviousVersions = !version.isDefined)
+          .map { result =>
+            Ok(Json.toJson(result))
           }
-          NotFound(Json.toJson(error))
-        }
+          .getOrElse {
+            // no matching protection
+            val error = protectionHistory match {
+              case Nil => Error("no protection found for specified protection id")
+              case _ => Error("protection of specified id found, but no match for specified version")
+            }
+            NotFound(Json.toJson(error))
+          }
+      }
     }
   }
 
@@ -90,30 +101,34 @@ trait PLAStubController extends BaseController {
     val headers = request.headers.toSimpleMap
     val protectionApplicationJs = ControllerHelper.addExtraRequestHeaderChecks(headers, protectionApplicationBodyJs)
 
-    protectionApplicationJs.fold(
-      errors => Future.successful(BadRequest(Json.toJson(Error(message="Request to crete protection failed with validation errors: " + errors)))),
-      createProtectionRequest =>
-        createProtectionRequest.protection.requestedType
+
+    exceptionTriggerRepository.findExceptionTriggerByNino(nino).flatMap {
+      case Some(trigger) => processExceptionTrigger(trigger)
+      case None => protectionApplicationJs.fold(
+        errors => Future.successful(BadRequest(Json.toJson(Error(message = "Request to create protection failed with validation errors: " + errors)))),
+        createProtectionRequest =>
+          createProtectionRequest.protection.requestedType
             .collect {
-            // gather the relevant rules
-            case Protection.Type.FP2016 => FP2016ApplicationRules
-            case Protection.Type.IP2014 => IP2014ApplicationRules
-            case Protection.Type.IP2016 => IP2016ApplicationRules
-          }
-          .map { appRules: ApplicationRules =>
-            // apply the rules against any existing protections to determine the notification ID, and then process
-            // the application according to that ID
-            val existingProtectionsFut = protectionRepository.findLatestVersionsOfAllProtectionsByNino(nino)
-            existingProtectionsFut flatMap { existingProtections: List[Protection] =>
-              val notificationId = appRules.check(existingProtections)
-              processApplication(nino, createProtectionRequest.protection, notificationId, existingProtections)
+              // gather the relevant rules
+              case Protection.Type.FP2016 => FP2016ApplicationRules
+              case Protection.Type.IP2014 => IP2014ApplicationRules
+              case Protection.Type.IP2016 => IP2016ApplicationRules
             }
-          }
-          .getOrElse {
-            val error = Error("invalid protection type specified")
-            Future.successful(BadRequest(Json.toJson(error)))
-          }
-    )
+            .map { appRules: ApplicationRules =>
+              // apply the rules against any existing protections to determine the notification ID, and then process
+              // the application according to that ID
+              val existingProtectionsFut = protectionRepository.findLatestVersionsOfAllProtectionsByNino(nino)
+              existingProtectionsFut flatMap { existingProtections: List[Protection] =>
+                val notificationId = appRules.check(existingProtections)
+                processApplication(nino, createProtectionRequest.protection, notificationId, existingProtections)
+              }
+            }
+            .getOrElse {
+              val error = Error("invalid protection type specified")
+              Future.successful(BadRequest(Json.toJson(error)))
+            }
+      )
+    }
   }
 
 	def updateProtection(nino: String,
@@ -189,6 +204,24 @@ trait PLAStubController extends BaseController {
   }
 
   // private methods
+
+  /**
+   * When passed an exception trigger, either returns the corresponding error response or throws he correct exception/timeout
+   * @param trigger
+   * @return
+   */
+  private def processExceptionTrigger(trigger: ExceptionTrigger): Future[Result] = {
+    import ExceptionTrigger.ExceptionType
+    trigger.extractedExceptionType match {
+      case ExceptionType.BadRequest => Future.successful(BadRequest("Simulated bad request"))
+      case ExceptionType.NotFound => Future.successful(NotFound("Simulated npot found"))
+      case ExceptionType.InternalServerError => Future.successful(InternalServerError("Simulated 500 error"))
+      case ExceptionType.BadGateway => Future.successful(BadGateway("Simulated 502 error"))
+      case ExceptionType.ServiceUnavailable => Future.successful(ServiceUnavailable("Simulated 503 error"))
+      case ExceptionType.UncaughtException => throw new Exception()
+      case ExceptionType.Timeout => Thread.sleep(60000); Future.successful(Ok)
+    }
+  }
 
   /**
     * Process an application for a new protection for which we have determined the relevant notification ID.
