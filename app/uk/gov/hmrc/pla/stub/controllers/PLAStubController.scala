@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.pla.stub.controllers
 
+import uk.gov.hmrc.pla.stub.actions.ExceptionTriggersActions.WithExceptionTriggerCheckAction
 import uk.gov.hmrc.pla.stub.notifications.{CertificateStatus, Notifications}
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
@@ -54,82 +55,74 @@ trait PLAStubController extends BaseController {
     * @return List of latest versions of each protection
     **/
 
-	def readProtections(nino: String) = Action.async { implicit request =>
+	def readProtections(nino: String) : Action[AnyContent] = WithExceptionTriggerCheckAction(nino).async { implicit request =>
 
-    exceptionTriggerRepository.findExceptionTriggerByNino(nino).flatMap {
-      case Some(trigger) => processExceptionTrigger(trigger)
-      case None => protectionRepository.findAllVersionsOfAllProtectionsByNino(nino).map { (protections: Map[Long,List[Protection]]) =>
+    protectionRepository.findAllVersionsOfAllProtectionsByNino(nino).map { (protections: Map[Long,List[Protection]]) =>
 
-        // get all current protections in the form expected in the result
-        val resultProtections = protections.values
-          .map { p => toResultProtection(p, None, setPreviousVersions = true) }
-          .collect { case Some(protection) => protection }
+      // get all current protections in the form expected in the result
+      val resultProtections = protections.values
+        .map { p => toResultProtection(p, None, setPreviousVersions = true) }
+        .collect { case Some(protection) => protection }
 
-        val psaCheckRef=genPSACheckRef(nino)
+      val psaCheckRef=genPSACheckRef(nino)
 
-        val result = Protections(nino, Some(psaCheckRef), resultProtections.toList)
-        Ok(Json.toJson(result))
-      }
-    }
-
-	}
-
-  def readProtection(nino: String, protectionId: Long, version: Option[Int]) = Action.async { implicit request =>
-
-    exceptionTriggerRepository.findExceptionTriggerByNino(nino).flatMap {
-      case Some(trigger) => processExceptionTrigger(trigger)
-      case None => protectionRepository.findAllVersionsOfProtectionByNinoAndId(nino, protectionId) map { protectionHistory: List[Protection] =>
-        toResultProtection(protectionHistory, version, setPreviousVersions = !version.isDefined)
-          .map { result =>
-            Ok(Json.toJson(result))
-          }
-          .getOrElse {
-            // no matching protection
-            val error = protectionHistory match {
-              case Nil => Error("no protection found for specified protection id")
-              case _ => Error("protection of specified id found, but no match for specified version")
-            }
-            NotFound(Json.toJson(error))
-          }
-      }
+      val result = Protections(nino, Some(psaCheckRef), resultProtections.toList)
+      Ok(Json.toJson(result))
     }
   }
 
-  def createProtection(nino: String) = Action.async (BodyParsers.parse.json) { implicit request =>
+
+
+  def readProtection(nino: String, protectionId: Long, version: Option[Int]) = WithExceptionTriggerCheckAction(nino).async { implicit request =>
+
+    protectionRepository.findAllVersionsOfProtectionByNinoAndId(nino, protectionId) map { protectionHistory: List[Protection] =>
+      toResultProtection(protectionHistory, version, setPreviousVersions = !version.isDefined)
+        .map { result =>
+          Ok(Json.toJson(result))
+        }
+        .getOrElse {
+          // no matching protection
+          val error = protectionHistory match {
+            case Nil => Error("no protection found for specified protection id")
+            case _ => Error("protection of specified id found, but no match for specified version")
+          }
+          NotFound(Json.toJson(error))
+        }
+    }
+  }
+
+  def createProtection(nino: String) = WithExceptionTriggerCheckAction(nino).async (BodyParsers.parse.json) { implicit request =>
 
     val protectionApplicationBodyJs = request.body.validate[CreateLTAProtectionRequest]
     val headers = request.headers.toSimpleMap
     val protectionApplicationJs = ControllerHelper.addExtraRequestHeaderChecks(headers, protectionApplicationBodyJs)
 
 
-    exceptionTriggerRepository.findExceptionTriggerByNino(nino).flatMap {
-      case Some(trigger) => processExceptionTrigger(trigger)
-      case None => protectionApplicationJs.fold(
-        errors => Future.successful(BadRequest(Json.toJson(Error(message = "Request to create protection failed with validation errors: " + errors)))),
-        createProtectionRequest =>
-          createProtectionRequest.protection.requestedType
-            .collect {
-              // gather the relevant rules
-              case Protection.Type.FP2016 => FP2016ApplicationRules
-              case Protection.Type.IP2014 => IP2014ApplicationRules
-              case Protection.Type.IP2016 => IP2016ApplicationRules
+    protectionApplicationJs.fold(
+      errors => Future.successful(BadRequest(Json.toJson(Error(message = "Request to create protection failed with validation errors: " + errors)))),
+      createProtectionRequest =>
+        createProtectionRequest.protection.requestedType
+          .collect {
+            // gather the relevant rules
+            case Protection.Type.FP2016 => FP2016ApplicationRules
+            case Protection.Type.IP2014 => IP2014ApplicationRules
+            case Protection.Type.IP2016 => IP2016ApplicationRules
+          }
+          .map { appRules: ApplicationRules =>
+            // apply the rules against any existing protections to determine the notification ID, and then process
+            // the application according to that ID
+            val existingProtectionsFut = protectionRepository.findLatestVersionsOfAllProtectionsByNino(nino)
+            existingProtectionsFut flatMap { existingProtections: List[Protection] =>
+              val notificationId = appRules.check(existingProtections)
+              processApplication(nino, createProtectionRequest.protection, notificationId, existingProtections)
             }
-            .map { appRules: ApplicationRules =>
-              // apply the rules against any existing protections to determine the notification ID, and then process
-              // the application according to that ID
-              val existingProtectionsFut = protectionRepository.findLatestVersionsOfAllProtectionsByNino(nino)
-              existingProtectionsFut flatMap { existingProtections: List[Protection] =>
-                val notificationId = appRules.check(existingProtections)
-                processApplication(nino, createProtectionRequest.protection, notificationId, existingProtections)
-              }
-            }
-            .getOrElse {
-              val error = Error("invalid protection type specified")
-              Future.successful(BadRequest(Json.toJson(error)))
-            }
+          }
+          .getOrElse {
+            val error = Error("invalid protection type specified")
+            Future.successful(BadRequest(Json.toJson(error)))
+          }
       )
     }
-  }
 
 	def updateProtection(nino: String,
                           protectionId: Long) = Action.async (BodyParsers.parse.json) { implicit request =>
