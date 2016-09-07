@@ -20,6 +20,7 @@ It also supports an operation for use by a future (related) service:
 The stub attempts to apply the same business rules as the full production service to protection application and amendment requests, which can return various outcomes based partly on whether and what type of protections are already in place for the individual. A notification ID returned with the response identifies the specific outcome.
 
 (The stub also supports some test-only operations for the purposes of making it easy to set up and tear down test data)
+asd
 
 ### License
 
