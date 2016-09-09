@@ -114,7 +114,7 @@ MongoProtectionRepository(implicit mongo: () => DB)
 
   override def findAllVersionsOfProtectionByNinoAndId(nino: String, protectionId: Long)(implicit ec: ExecutionContext):
       Future[List[Protection]] = {
-    val protectionVersionsFut: Future[List[Protection]] = find("nino" -> nino, "protectionID" -> protectionId)
+    val protectionVersionsFut: Future[List[Protection]] = find("nino" -> nino, "id" -> protectionId)
     protectionVersionsFut map { protectionVersions =>
       protectionVersions sortBy { _.version } reverse
     }
@@ -127,7 +127,7 @@ MongoProtectionRepository(implicit mongo: () => DB)
     remove("nino" -> nino).map {_ => }
 
   override def removeByNinoAndProtectionID(nino: String, protectionId: Long)(implicit ec: ExecutionContext): Future[Unit] =
-    remove("nino" -> nino, "protectionID" -> protectionId).map {_ => }
+    remove("nino" -> nino, "id" -> protectionId).map {_ => }
 
   override def removeAllProtections()(implicit ec: ExecutionContext): Future[Unit] =
     removeAll(WriteConcern.Acknowledged).map {_ => }
