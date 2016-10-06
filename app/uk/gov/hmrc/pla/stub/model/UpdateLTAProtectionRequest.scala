@@ -16,30 +16,32 @@
 
 package uk.gov.hmrc.pla.stub.model
 
-import play.api.libs.json.{Json, Format}
+import play.api.libs.json.{Format, Json}
 
 
-case class CreateLTAProtectionRequest(
+case class UpdateLTAProtectionRequest(
   nino: String,
-  protection: CreateLTAProtectionRequest.ProtectionDetails,
+  protection: UpdateLTAProtectionRequest.ProtectionDetails,
   pensionDebits: Option[List[PensionDebit]] = None)
 
-object CreateLTAProtectionRequest {
-  implicit val createLTARequestFormat: Format[CreateLTAProtectionRequest] = Json.format[CreateLTAProtectionRequest]
+
+object UpdateLTAProtectionRequest {
+  implicit val updateLTARequestFormat: Format[UpdateLTAProtectionRequest] = Json.format[UpdateLTAProtectionRequest]
   implicit lazy val protectionDetailsFormat: Format[ProtectionDetails] = Json.format[ProtectionDetails]
 
   case class ProtectionDetails(
-                                `type`: Int,
-                                relevantAmount: Option[Double] = None,
-                                preADayPensionInPayment: Option[Double] = None,
-                                postADayBCE: Option[Double] = None,
-                                uncrystallisedRights: Option[Double] = None,
-                                nonUKRights: Option[Double] = None) {
+    `type`: Int,
+    status: Int,
+    version: Int,
+    relevantAmount: Double,
+    preADayPensionInPayment: Double,
+    postADayBCE: Double,
+    uncrystallisedRights: Double,
+    nonUKRights: Double) {
 
     import uk.gov.hmrc.pla.stub.model.Protection.Type._
 
     def requestedType: Option[Value] = `type` match {
-      case 1 => Some(FP2016)
       case 2 => Some(IP2014)
       case 3 => Some(IP2016)
       case _ => None

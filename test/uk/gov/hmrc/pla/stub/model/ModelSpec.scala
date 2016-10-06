@@ -260,7 +260,6 @@ object ProtectionApplicationTestData {
     preADayPensionInPayment=Some(0),
     postADayBCE=Some(0),
     uncrystallisedRights=Some(0),
-    pensionDebits=Some(List()),
     nonUKRights= Some(0))
 
   val Ip2014 = ProtectionDetails(
@@ -269,7 +268,6 @@ object ProtectionApplicationTestData {
     preADayPensionInPayment=Some(0),
     postADayBCE=Some(0),
     uncrystallisedRights=Some(0),
-    pensionDebits=None,
     nonUKRights= Some(0))
 
 
@@ -279,7 +277,6 @@ object ProtectionApplicationTestData {
     preADayPensionInPayment=Some(0),
     postADayBCE=Some(0),
     uncrystallisedRights=Some(0),
-    pensionDebits=None,
     nonUKRights= Some(0))
 
   val Fp2014 = ProtectionDetails(
@@ -288,7 +285,6 @@ object ProtectionApplicationTestData {
     preADayPensionInPayment=Some(0),
     postADayBCE=Some(0),
     uncrystallisedRights=Some(0),
-    pensionDebits=None,
     nonUKRights= Some(0))
 }
 

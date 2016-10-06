@@ -114,7 +114,7 @@ trait PLAStubController extends BaseController {
             val existingProtectionsFut = protectionRepository.findLatestVersionsOfAllProtectionsByNino(nino)
             existingProtectionsFut flatMap { existingProtections: List[Protection] =>
               val notificationId = appRules.check(existingProtections)
-              processApplication(nino, createProtectionRequest.protection, notificationId, existingProtections)
+              processApplication(nino, createProtectionRequest, notificationId, existingProtections)
             }
           }
           .getOrElse {
@@ -124,19 +124,19 @@ trait PLAStubController extends BaseController {
       )
     }
 
-	def updateProtection(nino: String,
-                          protectionId: Long) = Action.async (BodyParsers.parse.json) { implicit request =>
-    val protectionAmendmentJs = request.body.validate[ProtectionAmendment]
-    protectionAmendmentJs.fold(
+	def updateProtection(nino: String, protectionId: Long) = Action.async (BodyParsers.parse.json) { implicit request =>
+    System.err.println("Amendment request body ==> " + request.body.toString)
+    val protectionUpdateJs = request.body.validate[UpdateLTAProtectionRequest]
+    protectionUpdateJs.fold(
       errors => Future.successful(BadRequest(Json.toJson(Error(message = "failed validation with errors: " + errors)))),
-      protectionAmendment => {
+      updateProtectionRequest => {
         // first cross-check relevant amount against total of the breakdown fields, reject if discrepancy found
         val calculatedRelevantAmount =
-          protectionAmendment.nonUKRights +
-            protectionAmendment.postADayBCE +
-            protectionAmendment.preADayPensionInPayment +
-            protectionAmendment.uncrystallisedRights
-        if (calculatedRelevantAmount != protectionAmendment.relevantAmount) {
+          updateProtectionRequest.protection.nonUKRights +
+          updateProtectionRequest.protection.postADayBCE +
+          updateProtectionRequest.protection.preADayPensionInPayment +
+            updateProtectionRequest.protection.uncrystallisedRights
+        if (calculatedRelevantAmount != updateProtectionRequest.protection.relevantAmount) {
           Future.successful(BadRequest(Json.toJson(
             Error(message = "The specified Relevant Amount is not the sum of the specified breakdown amounts " +
               "(non UK Rights + Post A Day BCE + Pre A Day Pensions In Payment + Uncrystallised Rights)"))))
@@ -146,12 +146,15 @@ trait PLAStubController extends BaseController {
         amendmentTargetFutureOption flatMap {
           case None =>
             Future.successful(NotFound(Json.toJson(Error(message = "protection to amend not found"))))
-          case Some(amendmentTarget) if amendmentTarget.`type` != protectionAmendment.`type` =>
+          case Some(amendmentTarget) if amendmentTarget.`type` != updateProtectionRequest.protection.`type` =>
             val error = Error("specified protection type does not match that of the protection to be amended")
+            Future.successful(BadRequest(Json.toJson(error)))
+          case Some(amendmentTarget) if amendmentTarget.version != updateProtectionRequest.protection.version =>
+            val error = Error("specified protection version does not match that of the protection to be amended")
             Future.successful(BadRequest(Json.toJson(error)))
           case Some(amendmentTarget) =>
             protectionRepository.findLatestVersionsOfAllProtectionsByNino(nino) flatMap { existingProtections =>
-              protectionAmendment.requestedType
+              updateProtectionRequest.protection.requestedType
                 .collect {
                   // gather the rules to be applied
                   case Protection.Type.IP2014 => IP2014AmendmentRules
@@ -161,7 +164,7 @@ trait PLAStubController extends BaseController {
                   // apply the rules against any existing protections to determine the notification ID, and then process
                   // the requested amendment according to that ID
                   val notificationId = rules.check(calculatedRelevantAmount, existingProtections)
-                  processAmendment(nino, amendmentTarget, protectionAmendment, notificationId)
+                  processAmendment(nino, amendmentTarget, updateProtectionRequest, notificationId)
                 }
                 .getOrElse {
                   // no amendment rules matching specified protection type
@@ -226,13 +229,13 @@ trait PLAStubController extends BaseController {
     * it just encapsulates the details of the non-successful application.
     *
     * @param nino Individuals NINO
-    * @param application Individuals application for a pensions lifetime allowance protection
+    * @param applicationRequest Details of the application as parsed from the request body
     * @param notificationID Identifies the specific outcome of the application, which determines the detailed result
     * @return The result is a created protection (if successful) or a pseudo-protection object containing details of the
     *         error if unsuccessful.
     */
   private def processApplication(nino: String,
-                                 application: CreateLTAProtectionRequest.ProtectionDetails,
+                                 applicationRequest: CreateLTAProtectionRequest,
                                  notificationID: Short,
                                  existingProtections: List[Protection]): Future[Result] = {
 
@@ -250,8 +253,8 @@ trait PLAStubController extends BaseController {
     val notificationMessage =
       injectMessageParameters(
         notificationEntry.message,
-        application.`type`,
-        application.relevantAmount,
+        applicationRequest.protection.`type`,
+        applicationRequest.protection.relevantAmount,
         protectionReference,
         genPSACheckRef(nino))
 
@@ -266,21 +269,24 @@ trait PLAStubController extends BaseController {
     val newProtection = Protection(
       nino = nino,
       version = 1,
-      id = Random.nextLong,
-      `type`=application.`type`,
+      // NPS has documented API range constraint 0..4294967295 (i.e. unsigned int full range) for 'id' - code below
+      // generates values uniformly distributed across this range (represented as Long since Scala doesn't have an unsigned
+      // int type)
+      id = Random.nextInt & 0x00000000ffffffffL,
+      `type`=applicationRequest.protection.`type`,
       protectionReference=protectionReference,
       status = Notifications.extractedStatus(notificationEntry.status),
       notificationID = Some(notificationID),
       notificationMsg = Some(notificationMessage),
       certificateDate = if (successfulApplication) Some(currDate) else None,
       certificateTime = if (successfulApplication) Some(currTime) else None,
-      relevantAmount = application.relevantAmount,
-      protectedAmount = if(application.`type` == 1) Some(1250000.00) else application.relevantAmount,
-      preADayPensionInPayment = application.preADayPensionInPayment,
-      postADayBCE = application.postADayBCE,
-      uncrystallisedRights = application.uncrystallisedRights,
-      pensionDebits= application.pensionDebits,
-      nonUKRights = application.nonUKRights)
+      relevantAmount = applicationRequest.protection.relevantAmount,
+      protectedAmount = if(applicationRequest.protection.`type` == 1) Some(1250000.00) else applicationRequest.protection.relevantAmount,
+      preADayPensionInPayment = applicationRequest.protection.preADayPensionInPayment,
+      postADayBCE = applicationRequest.protection.postADayBCE,
+      uncrystallisedRights = applicationRequest.protection.uncrystallisedRights,
+      nonUKRights = applicationRequest.protection.nonUKRights,
+      pensionDebits= applicationRequest.pensionDebits)
 
     // certain notifications require changing state of the currently open existing protection to dormant
     val doMaybeUpdateExistingProtection: Future[Any] = notificationID match {
@@ -357,21 +363,21 @@ trait PLAStubController extends BaseController {
     *
     * @param nino individuals NINO
     * @param current The current version of the protection to be amended
-    * @param amendment The requested amendment
+    * @param amendmentRequest Details of the requested amendment, as parsed from the request body.
     * @param notificationId The notification Id resulting from the business rule checks
     * @return Updated protection result
     */
   private def processAmendment(nino: String,
                                current: Protection,
-                               amendment: ProtectionAmendment,
+                               amendmentRequest: UpdateLTAProtectionRequest,
                                notificationId: Short): Future[Result] = {
 
     val notificationEntry = Notifications.table(notificationId)
 
     val newProtectionOpt = notificationEntry.status match {
       case CertificateStatus.Withdrawn =>
-        // the amended protecion will be withdrawn
-        val protectionReference = amendment.requestedType collect {
+        // the amended protection will be withdrawn
+        val protectionReference = amendmentRequest.protection.requestedType collect {
           case Protection.Type.IP2014 => ("IP14" + Math.abs(Random.nextLong)).substring(0, 9) + "A"
           case Protection.Type.IP2016 => ("IP16" + Math.abs(Random.nextLong)).substring(0, 9) + "B"
         }
@@ -379,7 +385,7 @@ trait PLAStubController extends BaseController {
           injectMessageParameters(
             notificationEntry.message,
             current.`type`,
-            Some(amendment.relevantAmount),
+            Some(amendmentRequest.protection.relevantAmount),
             protectionReference,
             genPSACheckRef(nino))
 
@@ -394,20 +400,21 @@ trait PLAStubController extends BaseController {
           nino = nino,
           version = 1,
           id = Random.nextLong,
-          `type` = amendment.`type`,
+          `type` = amendmentRequest.protection.`type`, // should be unchanged
           protectionReference = protectionReference,
           status = Notifications.extractedStatus(notificationEntry.status),
           notificationID = Some(notificationId),
           notificationMsg = Some(notificationMessage),
           certificateDate = Some(currDate),
           certificateTime = Some(currTime),
-          relevantAmount = Some(amendment.relevantAmount),
-          preADayPensionInPayment = Some(amendment.preADayPensionInPayment),
-          postADayBCE = Some(amendment.postADayBCE),
-          uncrystallisedRights = Some(amendment.uncrystallisedRights),
-          pensionDebits = amendment.pensionDebits,
-          nonUKRights = Some(amendment.nonUKRights)
-        ))
+          relevantAmount = Some(amendmentRequest.protection.relevantAmount),
+          protectedAmount = Some(amendmentRequest.protection.relevantAmount),
+          preADayPensionInPayment = Some(amendmentRequest.protection.preADayPensionInPayment),
+          postADayBCE = Some(amendmentRequest.protection.postADayBCE),
+          uncrystallisedRights = Some(amendmentRequest.protection.uncrystallisedRights),
+          nonUKRights = Some(amendmentRequest.protection.nonUKRights),
+          pensionDebits = amendmentRequest.pensionDebits)
+        )
 
       case _ => None
     }
@@ -418,7 +425,7 @@ trait PLAStubController extends BaseController {
         current.copy(version = current.version + 1, status = Protection.extractedStatus(Protection.Status.Withdrawn))
 
       case _ =>
-        val protectionReference: Option[String] = amendment.requestedType
+        val protectionReference: Option[String] = amendmentRequest.protection.requestedType
               .collect {
                 case Protection.Type.IP2014 => ("IP14" + Math.abs(Random.nextLong)).substring(0, 9) + "A"
                 case Protection.Type.IP2016 => ("IP16" + Math.abs(Random.nextLong)).substring(0, 9) + "B"
@@ -429,7 +436,7 @@ trait PLAStubController extends BaseController {
           injectMessageParameters(
             notificationEntry.message,
             current.`type`,
-            Some(amendment.relevantAmount),
+            Some(amendmentRequest.protection.relevantAmount),
             protectionReference,
             genPSACheckRef(nino))
 
@@ -447,16 +454,19 @@ trait PLAStubController extends BaseController {
           certificateTime = Some(currTime),
           notificationID= Some(notificationId),
           notificationMsg = Some(notificationMessage),
-          relevantAmount = Some(amendment.relevantAmount),
-          preADayPensionInPayment = Some(amendment.preADayPensionInPayment),
-          postADayBCE = Some(amendment.postADayBCE),
-          uncrystallisedRights = Some(amendment.uncrystallisedRights),
-          pensionDebits = amendment.pensionDebits,
-          nonUKRights = Some(amendment.nonUKRights))
+          relevantAmount = Some(amendmentRequest.protection.relevantAmount),
+          protectedAmount = Some(amendmentRequest.protection.relevantAmount),
+          preADayPensionInPayment = Some(amendmentRequest.protection.preADayPensionInPayment),
+          postADayBCE = Some(amendmentRequest.protection.postADayBCE),
+          uncrystallisedRights = Some(amendmentRequest.protection.uncrystallisedRights),
+          nonUKRights = Some(amendmentRequest.protection.nonUKRights),
+          pensionDebits = amendmentRequest.pensionDebits)
     }
 
-    val responseBody = Json.toJson((newProtectionOpt getOrElse amendedProtection).copy(notificationMsg = None))
-    val result = Ok(responseBody)
+    val responseProtection = (newProtectionOpt getOrElse amendedProtection).copy(notificationMsg = None)
+    val okResponse = UpdateLTAProtectionResponse(nino, Some(genPSACheckRef(nino)), responseProtection)
+    val okResponseBody = Json.toJson(okResponse)
+    val result = Ok(okResponseBody)
 
     val doMaybeCreateNewProtectionFut: Future[Any] = newProtectionOpt map { newProtection =>
         protectionRepository.insert(newProtection)
