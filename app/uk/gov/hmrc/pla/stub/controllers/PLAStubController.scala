@@ -135,7 +135,8 @@ trait PLAStubController extends BaseController {
           updateProtectionRequest.protection.nonUKRights +
           updateProtectionRequest.protection.postADayBCE +
           updateProtectionRequest.protection.preADayPensionInPayment +
-            updateProtectionRequest.protection.uncrystallisedRights
+          updateProtectionRequest.protection.uncrystallisedRights -
+          updateProtectionRequest.protection.pensionDebitTotalAmount.getOrElse(0.0)
         if (calculatedRelevantAmount != updateProtectionRequest.protection.relevantAmount) {
           Future.successful(BadRequest(Json.toJson(
             Error(message = "The specified Relevant Amount is not the sum of the specified breakdown amounts " +
