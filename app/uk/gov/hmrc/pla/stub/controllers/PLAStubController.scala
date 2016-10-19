@@ -143,6 +143,7 @@ trait PLAStubController extends BaseController {
               "(non UK Rights + Post A Day BCE + Pre A Day Pensions In Payment + Uncrystallised Rights)"))))
         }
 
+        val calculatedRelevantAmountMinusPSO = calculatedRelevantAmount - updateProtectionRequest.pensionDebits.map{debits => debits.map(_.pensionDebitEnteredAmount).sum}.getOrElse(0.0)
         val amendmentTargetFutureOption = protectionRepository.findLatestVersionOfProtectionByNinoAndId(nino, protectionId)
         amendmentTargetFutureOption flatMap {
           case None =>
@@ -164,7 +165,7 @@ trait PLAStubController extends BaseController {
                 .map { rules: AmendmentRules =>
                   // apply the rules against any existing protections to determine the notification ID, and then process
                   // the requested amendment according to that ID
-                  val notificationId = rules.check(calculatedRelevantAmount, existingProtections)
+                  val notificationId = rules.check(calculatedRelevantAmountMinusPSO, existingProtections)
                   processAmendment(nino, amendmentTarget, updateProtectionRequest, notificationId)
                 }
                 .getOrElse {
@@ -266,6 +267,18 @@ trait PLAStubController extends BaseController {
 
     val currDate = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
     val currTime = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_TIME)
+    val totalPensionDebitAmount = applicationRequest.pensionDebits.map { pensionDebits =>
+      pensionDebits.map(_.pensionDebitEnteredAmount).sum
+    }
+
+    import Protection.Type._
+    val maxProtectedAmount = applicationRequest.protection.requestedType match {
+      case Some(FP2016) => 1250000.0
+      case Some(IP2016) => 1250000.0
+      case Some(IP2014) => 1500000.0
+    }
+
+    val relevantAmountMinusPSOs = applicationRequest.protection.relevantAmount.map { amt => amt - totalPensionDebitAmount.getOrElse(0.0)}
 
     val newProtection = Protection(
       nino = nino,
@@ -281,13 +294,15 @@ trait PLAStubController extends BaseController {
       notificationMsg = Some(notificationMessage),
       certificateDate = if (successfulApplication) Some(currDate) else None,
       certificateTime = if (successfulApplication) Some(currTime) else None,
-      relevantAmount = applicationRequest.protection.relevantAmount,
-      protectedAmount = if(applicationRequest.protection.`type` == 1) Some(1250000.00) else applicationRequest.protection.relevantAmount,
+      relevantAmount = relevantAmountMinusPSOs,
+      protectedAmount = if(applicationRequest.protection.requestedType.contains(FP2016)) Some(maxProtectedAmount) else relevantAmountMinusPSOs.map{amt => amt.min(maxProtectedAmount)},
       preADayPensionInPayment = applicationRequest.protection.preADayPensionInPayment,
       postADayBCE = applicationRequest.protection.postADayBCE,
       uncrystallisedRights = applicationRequest.protection.uncrystallisedRights,
       nonUKRights = applicationRequest.protection.nonUKRights,
-      pensionDebits= applicationRequest.pensionDebits)
+      pensionDebits= applicationRequest.pensionDebits,
+      pensionDebitTotalAmount = totalPensionDebitAmount
+        )
 
     // certain notifications require changing state of the currently open existing protection to dormant
     val doMaybeUpdateExistingProtection: Future[Any] = notificationID match {
@@ -397,10 +412,20 @@ trait PLAStubController extends BaseController {
         val currDate = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
         val currTime = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_TIME)
 
+        val amendmentPsoAmt = amendmentRequest.pensionDebits.map{debits => debits.map(_.pensionDebitEnteredAmount).sum}.getOrElse(0.0)
+        val updatedPensionDebitTotalAmount = amendmentRequest.protection.pensionDebitTotalAmount.getOrElse(0.0) + amendmentPsoAmt
+        val relevantAmountMinusPSO = amendmentRequest.protection.relevantAmount - amendmentPsoAmt
+
+        import Protection.Type._
+        val maxProtectedAmount = amendmentRequest.protection.requestedType match {
+          case Some(IP2014) => 1500000.00
+          case Some(IP2016) => 1250000.00
+        }
+
         Some(Protection(
           nino = nino,
           version = 1,
-          id = Random.nextLong,
+          id = Random.nextLong(),
           `type` = amendmentRequest.protection.`type`, // should be unchanged
           protectionReference = protectionReference,
           status = Notifications.extractedStatus(notificationEntry.status),
@@ -408,12 +433,13 @@ trait PLAStubController extends BaseController {
           notificationMsg = Some(notificationMessage),
           certificateDate = Some(currDate),
           certificateTime = Some(currTime),
-          relevantAmount = Some(amendmentRequest.protection.relevantAmount),
-          protectedAmount = Some(amendmentRequest.protection.relevantAmount),
+          relevantAmount = Some(relevantAmountMinusPSO),
+          protectedAmount = Some(relevantAmountMinusPSO.min(maxProtectedAmount)),
           preADayPensionInPayment = Some(amendmentRequest.protection.preADayPensionInPayment),
           postADayBCE = Some(amendmentRequest.protection.postADayBCE),
           uncrystallisedRights = Some(amendmentRequest.protection.uncrystallisedRights),
           nonUKRights = Some(amendmentRequest.protection.nonUKRights),
+          pensionDebitTotalAmount = Some(updatedPensionDebitTotalAmount),
           pensionDebits = amendmentRequest.pensionDebits)
         )
 
@@ -444,6 +470,16 @@ trait PLAStubController extends BaseController {
         val currDate = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
         val currTime = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_TIME)
 
+        val amendmentPsoAmt = amendmentRequest.pensionDebits.map{debits => debits.map(_.pensionDebitEnteredAmount).sum}.getOrElse(0.0)
+        val updatedPensionDebitTotalAmount = amendmentRequest.protection.pensionDebitTotalAmount.getOrElse(0.0) + amendmentPsoAmt
+        val relevantAmountMinusPSO = amendmentRequest.protection.relevantAmount - amendmentPsoAmt
+
+        import Protection.Type._
+        val maxProtectedAmount = amendmentRequest.protection.requestedType match {
+          case Some(IP2014) => 1500000.00
+          case Some(IP2016) => 1250000.00
+        }
+
         Protection(
           nino = nino,
           version = current.version + 1,
@@ -455,12 +491,13 @@ trait PLAStubController extends BaseController {
           certificateTime = Some(currTime),
           notificationID= Some(notificationId),
           notificationMsg = Some(notificationMessage),
-          relevantAmount = Some(amendmentRequest.protection.relevantAmount),
-          protectedAmount = Some(amendmentRequest.protection.relevantAmount),
+          relevantAmount = Some(relevantAmountMinusPSO),
+          protectedAmount = Some(relevantAmountMinusPSO.min(maxProtectedAmount)),
           preADayPensionInPayment = Some(amendmentRequest.protection.preADayPensionInPayment),
           postADayBCE = Some(amendmentRequest.protection.postADayBCE),
           uncrystallisedRights = Some(amendmentRequest.protection.uncrystallisedRights),
           nonUKRights = Some(amendmentRequest.protection.nonUKRights),
+          pensionDebitTotalAmount = Some(updatedPensionDebitTotalAmount),
           pensionDebits = amendmentRequest.pensionDebits)
     }
 
