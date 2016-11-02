@@ -17,6 +17,7 @@
 package uk.gov.hmrc.pla.stub.actions
 
 
+import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.pla.stub.model.ExceptionTrigger
 import uk.gov.hmrc.pla.stub.repository.{ExceptionTriggerRepository, MongoExceptionTriggerRepository}
@@ -35,6 +36,24 @@ trait ExceptionTriggersActions  {
 
   private type AsyncPlayRequest = Request[AnyContent] => Future[Result]
 
+  private val noNotificationIdJson = Json.parse(
+    s"""
+       |  {
+       |      "nino": "AA055121",
+       |      "pensionSchemeAdministratorCheckReference" : "PSA123456789",
+       |      "protection": {
+       |        "id": 1234567,
+       |        "version": 1,
+       |        "type": 1,
+       |        "certificateDate": "2015-05-22",
+       |        "certificateTime": "12:22:59",
+       |        "status": 1,
+       |        "protectionReference": "IP161234567890C",
+       |        "relevantAmount": 1250000.00
+       |      }
+       |    }
+       |
+    """.stripMargin).as[JsObject]
 
   case class WithExceptionTriggerCheckAction(nino: String)(implicit ec: ExecutionContext) extends ActionBuilder[Request] {
 
@@ -62,6 +81,7 @@ trait ExceptionTriggersActions  {
         case ExceptionType.ServiceUnavailable => Future.successful(Results.ServiceUnavailable("Simulated 503 error"))
         case ExceptionType.UncaughtException => throw new Exception()
         case ExceptionType.Timeout => Thread.sleep(60000); Future.successful(Results.Ok)
+        case ExceptionType.NoNotificationId => Future.successful(Results.Ok(noNotificationIdJson))
       }
     }
   }
