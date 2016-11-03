@@ -30,6 +30,7 @@ case class ExceptionTrigger(nino: String, exceptionType: String) {
     case "503" => ServiceUnavailable
     case "uncaught" => UncaughtException
     case "timeout" => Timeout
+    case "noid" => NoNotificationId
   }
 }
 
@@ -39,6 +40,6 @@ object ExceptionTrigger {
 
 
   object ExceptionType extends Enumeration {
-    val BadRequest, NotFound, InternalServerError, BadGateway, ServiceUnavailable, UncaughtException, Timeout = Value
+    val BadRequest, NotFound, InternalServerError, BadGateway, ServiceUnavailable, UncaughtException, Timeout, NoNotificationId = Value
   }
 }

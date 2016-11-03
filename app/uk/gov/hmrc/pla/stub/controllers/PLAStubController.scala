@@ -73,7 +73,7 @@ trait PLAStubController extends BaseController {
 
 
 
-  def readProtection(nino: String, protectionId: Long, version: Option[Int]) = WithExceptionTriggerCheckAction(nino).async { implicit request =>
+  def readProtection(nino: String, protectionId: Long, version: Option[Int]) = Action.async { implicit request =>
 
     protectionRepository.findAllVersionsOfProtectionByNinoAndId(nino, protectionId) map { protectionHistory: List[Protection] =>
       toResultProtection(protectionHistory, version, setPreviousVersions = !version.isDefined)
@@ -124,7 +124,7 @@ trait PLAStubController extends BaseController {
       )
     }
 
-	def updateProtection(nino: String, protectionId: Long) = Action.async (BodyParsers.parse.json) { implicit request =>
+	def updateProtection(nino: String, protectionId: Long) = WithExceptionTriggerCheckAction(nino).async (BodyParsers.parse.json) { implicit request =>
     System.err.println("Amendment request body ==> " + request.body.toString)
     val protectionUpdateJs = request.body.validate[UpdateLTAProtectionRequest]
     protectionUpdateJs.fold(
