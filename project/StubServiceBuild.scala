@@ -26,6 +26,8 @@ private object AppDependencies {
   private val hmrcTestVersion = "2.1.0"
   private val logbackJsonLoggerVersion = "3.1.0"
   private val playReactiveMongoVersion = "4.8.0"
+  private val pegdownVersion = "1.6.0"
+  private val scalaTestVersion = "2.2.6"
   
   val compile = Seq(
     ws,
@@ -45,10 +47,11 @@ private object AppDependencies {
     def apply() = new TestDependencies {
       override lazy val test = Seq(
         "uk.gov.hmrc" %% "hmrctest" % hmrcTestVersion % scope,
-        "org.scalatest" %% "scalatest" % "2.2.6" % scope,
-        "org.pegdown" % "pegdown" % "1.5.0" % scope,
+        "org.scalatest" %% "scalatest" % scalaTestVersion % scope,
+        "org.pegdown" % "pegdown" % pegdownVersion % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-        "uk.gov.hmrc" %% "domain" % "3.7.0"
+        "uk.gov.hmrc" %% "domain" % "3.7.0",
+        "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope
       )
     }.test
   }
