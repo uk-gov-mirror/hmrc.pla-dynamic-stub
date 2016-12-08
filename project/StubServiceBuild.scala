@@ -8,9 +8,9 @@ object StubServiceBuild extends Build with MicroService {
 
   val appName = "pla-dynamic-stub"
 
-  override lazy val plugins: Seq[Plugins] = Seq(
-    SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin
-  )
+//  override lazy val plugins: Seq[Plugins] = Seq(
+//    SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin
+//  )
 
   override lazy val appDependencies: Seq[ModuleID] = AppDependencies()
 }
@@ -24,14 +24,16 @@ private object AppDependencies {
   private val playHealthVersion = "2.0.0"
   private val playConfigVersion = "3.0.0"
   private val hmrcTestVersion = "2.1.0"
+  private val logbackJsonLoggerVersion = "3.1.0"
+  private val playReactiveMongoVersion = "4.8.0"
   
   val compile = Seq(
     ws,
     "uk.gov.hmrc" %% "microservice-bootstrap" % microserviceBootstrapVersion,
     "uk.gov.hmrc" %% "play-health" % playHealthVersion,
     "uk.gov.hmrc" %% "play-config" % playConfigVersion,
-    "uk.gov.hmrc" %% "play-json-logger" % "2.1.1",
-    "uk.gov.hmrc" %% "play-reactivemongo" % "4.8.0"
+    "uk.gov.hmrc" %% "logback-json-logger" % logbackJsonLoggerVersion,
+    "uk.gov.hmrc" %% "play-reactivemongo" % playReactiveMongoVersion
   )
 
   trait TestDependencies {

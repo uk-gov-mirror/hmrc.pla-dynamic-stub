@@ -34,7 +34,8 @@ trait MicroService {
     .enablePlugins(Seq(play.sbt.PlayScala,SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin) ++ plugins : _*)
     .settings(playSettings ++ scoverageSettings : _*)
     .settings(scalaSettings: _*)
-    .settings(publishingSettings: _*)
+    .settings(SbtDistributablesPlugin.publishingSettings: _*)
+//    .settings(publishingSettings: _*)
     .settings(defaultSettings(): _*)
     .settings(
       targetJvm := "jvm-1.8",
