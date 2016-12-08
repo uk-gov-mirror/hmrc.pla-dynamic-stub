@@ -16,14 +16,14 @@ object StubServiceBuild extends Build with MicroService {
 }
 
 private object AppDependencies {
-  import play.PlayImport._
+  import play.sbt.PlayImport._
   import play.core.PlayVersion
 
 
-  private val microserviceBootstrapVersion = "4.2.1"
-  private val playHealthVersion = "1.1.0"
-  private val playConfigVersion = "2.0.1"
-  private val hmrcTestVersion = "1.6.0"
+  private val microserviceBootstrapVersion = "5.8.0"
+  private val playHealthVersion = "2.0.0"
+  private val playConfigVersion = "3.0.0"
+  private val hmrcTestVersion = "2.1.0"
   
   val compile = Seq(
     ws,
