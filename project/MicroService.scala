@@ -35,7 +35,6 @@ trait MicroService {
     .settings(playSettings ++ scoverageSettings : _*)
     .settings(scalaSettings: _*)
     .settings(SbtDistributablesPlugin.publishingSettings: _*)
-//    .settings(publishingSettings: _*)
     .settings(defaultSettings(): _*)
     .settings(
       targetJvm := "jvm-1.8",

@@ -8,9 +8,6 @@ object StubServiceBuild extends Build with MicroService {
 
   val appName = "pla-dynamic-stub"
 
-//  override lazy val plugins: Seq[Plugins] = Seq(
-//    SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin
-//  )
 
   override lazy val appDependencies: Seq[ModuleID] = AppDependencies()
 }
