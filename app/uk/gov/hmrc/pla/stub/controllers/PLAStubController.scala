@@ -201,6 +201,28 @@ trait PLAStubController extends BaseController {
     }
   }
 
+  /**
+    * Updated Facility for Pension Scheme Administrator (PSA) to lookup/verify current protection details
+    *
+    * @param psaRef the individuals PSA reference number
+    * @param ltaRef the lifetime allowance Reference number
+    * @return a simple result indicating whether valid certificate found, and if valid the type and relevant amount.
+    */
+  def updatedPSALookup(psaRef: String, ltaRef: String):Action[AnyContent] = Action.async { implicit request =>
+    val validationResult = (psaRef.matches("^PSA[0-9]{8}[A-Z]$"), ltaRefValidator(ltaRef))
+    if(!validationResult._1| !validationResult._2) {
+      val refValidationResponse = validationResult match {
+        case (false, false) => "pensionSchemeAdministratorCheckReference,lifetimeAllowanceReference"
+        case (false, true) => "pensionSchemeAdministratorCheckReference"
+        case (true, false) => "lifetimeAllowanceReference"
+      }
+      val response = PSALookupErrorResult(s"Your submission contains one or more errors. Failed Parameter(s) - [$refValidationResponse]")
+      Future.successful(BadRequest(Json.toJson(response)))
+    } else {
+      Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 0, BigDecimal.exact("25000.00")))))
+    }
+  }
+
   // private methods
 
   /**
@@ -583,6 +605,16 @@ trait PLAStubController extends BaseController {
       .replace("#{amount}",injectAmount.toString)
       .replace("#{reference}",injectProtectionRef)
       .replace("#{psa_reference}",psaCheckRef)
+  }
+
+  /**
+    * Useful method to validate an ltaRef against the two regular expressions provided by DES
+    *
+    * @param ltaRef short for lifetimeAllowanceReference
+    * @return
+    */
+  private def ltaRefValidator(ltaRef: String): Boolean = {
+    ltaRef.matches("^(IP14|IP16|FP16)[0-9]{10}[ABCDEFGHJKLMNPRSTXYZ]$") | ltaRef.matches("^[1-9A][0-9]{6}[ABCDEFHXJKLMNYPQRSTZW]$")
   }
 }
 
