@@ -16,23 +16,20 @@
 
 package uk.gov.hmrc.pla.stub.controllers
 
-import uk.gov.hmrc.pla.stub.actions.ExceptionTriggersActions.WithExceptionTriggerCheckAction
-import uk.gov.hmrc.pla.stub.notifications.{CertificateStatus, Notifications}
-import uk.gov.hmrc.play.microservice.controller.BaseController
-
-import play.api.mvc._
-import play.api.libs.json._
-
-import uk.gov.hmrc.pla.stub.repository.{MongoExceptionTriggerRepository, ExceptionTriggerRepository, ProtectionRepository, MongoProtectionRepository}
-import uk.gov.hmrc.pla.stub.model._
-import uk.gov.hmrc.pla.stub.rules._
-
-import scala.Error
-import scala.concurrent.Future
-import scala.util.Random
 import java.time.LocalDateTime
 
+import play.api.libs.json._
+import play.api.mvc._
+import uk.gov.hmrc.pla.stub.actions.ExceptionTriggersActions.WithExceptionTriggerCheckAction
+import uk.gov.hmrc.pla.stub.model._
+import uk.gov.hmrc.pla.stub.notifications.{CertificateStatus, Notifications}
+import uk.gov.hmrc.pla.stub.repository.{ExceptionTriggerRepository, MongoExceptionTriggerRepository, MongoProtectionRepository, ProtectionRepository}
+import uk.gov.hmrc.pla.stub.rules._
+import uk.gov.hmrc.play.microservice.controller.BaseController
+
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.util.Random
 
 /**
   * The controller for the Protect your Lifetime Allowance (PLA) service REST API dynamic stub
@@ -210,7 +207,13 @@ trait PLAStubController extends BaseController {
     */
   def updatedPSALookup(psaRef: String, ltaRef: String):Action[AnyContent] = Action.async { implicit request =>
     val validationResult = (psaRef.matches("^PSA[0-9]{8}[A-Z]$"), ltaRefValidator(ltaRef))
-    if(!validationResult._1| !validationResult._2) {
+    val environment = request.headers.get("Environment")
+    val auth = request.headers.get("Authorization")
+    if(environment.isEmpty) {
+      Future.successful(Forbidden)
+    } else if(auth.isEmpty) {
+      Future.successful(Unauthorized(Json.toJson(Error("Required OAuth credentials not provided"))))
+    } else if(!validationResult._1| !validationResult._2) {
       val refValidationResponse = validationResult match {
         case (false, false) => "pensionSchemeAdministratorCheckReference,lifetimeAllowanceReference"
         case (false, true) => "pensionSchemeAdministratorCheckReference"
@@ -219,7 +222,7 @@ trait PLAStubController extends BaseController {
       val response = PSALookupErrorResult(s"Your submission contains one or more errors. Failed Parameter(s) - [$refValidationResponse]")
       Future.successful(BadRequest(Json.toJson(response)))
     } else {
-      Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 0, BigDecimal.exact("25000.00")))))
+      Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 1, BigDecimal.exact("25000.00")))))
     }
   }
 
