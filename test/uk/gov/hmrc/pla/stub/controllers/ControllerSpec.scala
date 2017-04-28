@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.pla.stub.controllers
 
-import uk.gov.hmrc.play.test.UnitSpec
-import java.util.Random
-
-import play.api.libs.json.{JsSuccess, _}
+import org.scalatestplus.play.OneAppPerSuite
+import play.api.libs.json._
+import play.api.test.FakeRequest
+import play.api.test.Helpers._
 import uk.gov.hmrc.pla.stub.model._
-
+import uk.gov.hmrc.play.test.UnitSpec
 
 object TestData {
   val validFP2016CeateRequest = CreateLTAProtectionRequest(
@@ -31,14 +31,17 @@ object TestData {
   val authHeader = "Authorization" -> "Bearer: abcdef12345678901234567890"
   val envHeader = "Environment" -> "IST0"
 
-  val validHeadersExample = Map(authHeader,envHeader)
+  val validHeadersExample = Map(authHeader, envHeader)
   val noAuthHeadersExample = Map(envHeader)
   val noEnvHeadersExample = Map(authHeader)
-  val emptyHeadersExample = Map[String,String]()
+  val emptyHeadersExample = Map[String, String]()
   val invalidRequestJsError = JsError("invalid request body")
+
+  val validResponse = "\"pensionSchemeAdministratorCheckReference\":\"PSA12345678A\",\"ltaType\":7,\"psaCheckResult\":1,\"relevantAmount\":25000"
+  val notFoundResponse = "\"Reason: Resource not found\""
 }
 
-class PLAStubControllerSpec extends UnitSpec {
+class PLAStubControllerSpec extends UnitSpec with OneAppPerSuite {
   "The validation results for a valid CreateProtectionRequest and valid headers should be a success" should {
     "return a valid request object" in {
       val requestJs = ControllerHelper.addExtraRequestHeaderChecks(TestData.validHeadersExample, JsSuccess(TestData.validFP2016CeateRequest))
@@ -87,12 +90,73 @@ class PLAStubControllerSpec extends UnitSpec {
   }
 
   "The validation results for an invalid CreateProtectionRequest and missing Authorization and Environment headers" should {
-    "return a failure with three validation errosr" in {
-      val requestJs = ControllerHelper.addExtraRequestHeaderChecks(TestData.emptyHeadersExample,  TestData.invalidRequestJsError)
+    "return a failure with three validation errors" in {
+      val requestJs = ControllerHelper.addExtraRequestHeaderChecks(TestData.emptyHeadersExample, TestData.invalidRequestJsError)
       requestJs.isSuccess shouldBe false
       println("RESULT ==> " + requestJs)
       requestJs.asInstanceOf[JsError].errors.seq.size shouldBe 1
       requestJs.asInstanceOf[JsError].errors.seq.head._2.size shouldBe 3
+    }
+  }
+
+  "PSA Lookup" should {
+    "return a 403 Forbidden with empty body when provided no environment header" in {
+      val controller = PLAStubController
+      val result = controller.updatedPSALookup("PSA12345678A", "IP141000000000A").apply(FakeRequest())
+      status(result) shouldBe FORBIDDEN
+      contentAsString(result) shouldBe ""
+    }
+
+    "return a 401 Unauthorised with body when provided no auth header" in {
+      val controller = PLAStubController
+      val result = controller.updatedPSALookup("PSA12345678A", "IP141000000000A").apply(FakeRequest().withHeaders(TestData.envHeader))
+      status(result) shouldBe UNAUTHORIZED
+      contentAsString(result) should include("Required OAuth credentials not provided")
+    }
+
+    "return a 400 BadRequest with body when provided invalid psa and lta references" in {
+      val controller = PLAStubController
+      val result = controller.updatedPSALookup("", "").apply(FakeRequest().withHeaders(TestData.envHeader, TestData.authHeader))
+      val error = "Your submission contains one or more errors. Failed Parameter(s) - [pensionSchemeAdministratorCheckReference,lifetimeAllowanceReference]"
+      status(result) shouldBe BAD_REQUEST
+      contentAsString(result) should include(error)
+    }
+
+    "return a 400 BadRequest with body when provided invalid psaReference" in {
+      val controller = PLAStubController
+      val result = controller.updatedPSALookup("", "IP141000000000A").apply(FakeRequest().withHeaders(TestData.envHeader, TestData.authHeader))
+      val error = "Your submission contains one or more errors. Failed Parameter(s) - [pensionSchemeAdministratorCheckReference]"
+      status(result) shouldBe BAD_REQUEST
+      contentAsString(result) should include(error)
+    }
+
+    "return a 400 BadRequest with body when provided invalid ltaReference" in {
+      val controller = PLAStubController
+      val result = controller.updatedPSALookup("PSA12345678A", "").apply(FakeRequest().withHeaders(TestData.envHeader, TestData.authHeader))
+      val error = "Your submission contains one or more errors. Failed Parameter(s) - [lifetimeAllowanceReference]"
+      status(result) shouldBe BAD_REQUEST
+      contentAsString(result) should include(error)
+    }
+
+    "return a 404 with body when provided psa reference ending in Z" in {
+      val controller = PLAStubController
+      val result = controller.updatedPSALookup("PSA12345678Z", "IP141000000000A").apply(FakeRequest().withHeaders(TestData.envHeader, TestData.authHeader))
+      status(result) shouldBe NOT_FOUND
+      contentAsString(result) should include(TestData.notFoundResponse)
+    }
+
+    "return a 404 with body when provided lta reference ending in Z" in {
+      val controller = PLAStubController
+      val result = controller.updatedPSALookup("PSA12345678A", "IP141000000000Z").apply(FakeRequest().withHeaders(TestData.envHeader, TestData.authHeader))
+      status(result) shouldBe NOT_FOUND
+      contentAsString(result) should include(TestData.notFoundResponse)
+    }
+
+    "return a 200 with body when provided valid references" in {
+      val controller = PLAStubController
+      val result = controller.updatedPSALookup("PSA12345678A", "IP141000000000A").apply(FakeRequest().withHeaders(TestData.envHeader, TestData.authHeader))
+      status(result) shouldBe OK
+      contentAsString(result) should include(TestData.validResponse)
     }
   }
 }
