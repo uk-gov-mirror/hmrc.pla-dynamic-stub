@@ -38,7 +38,7 @@ object TestData {
   val invalidRequestJsError = JsError("invalid request body")
 
   val validResponse = "\"pensionSchemeAdministratorCheckReference\":\"PSA12345678A\",\"ltaType\":7,\"psaCheckResult\":1,\"relevantAmount\":25000"
-  val notFoundResponse = "\"Reason: Resource not found\""
+  val notFoundResponse = "\"reason\":\"Resource not found\""
 }
 
 class PLAStubControllerSpec extends UnitSpec with OneAppPerSuite {

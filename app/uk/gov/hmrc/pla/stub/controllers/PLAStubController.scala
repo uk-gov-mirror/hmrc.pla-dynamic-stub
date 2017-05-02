@@ -214,7 +214,7 @@ trait PLAStubController extends BaseController {
       Future.successful(Forbidden)
     } else if (auth.isEmpty) {
       Logger.error("Request is missing auth header")
-      Future.successful(Unauthorized(Json.toJson(Error("Required OAuth credentials not provided"))))
+      Future.successful(Unauthorized(Json.toJson(PSALookupErrorResult("Required OAuth credentials not provided"))))
     } else if (!validationResult._1 | !validationResult._2) {
       val refValidationResponse = validationResult match {
         case (false, false) => "pensionSchemeAdministratorCheckReference,lifetimeAllowanceReference"
@@ -226,13 +226,13 @@ trait PLAStubController extends BaseController {
       val response = PSALookupErrorResult(errorMsg)
       Future.successful(BadRequest(Json.toJson(response)))
     } else if (psaRef.endsWith("Z") | ltaRef.endsWith("Z")) {
-      val errorMsg = "Reason: Resource not found"
-      Logger.error(errorMsg)
-      Future.successful(NotFound(Json.toJson(errorMsg)))
+      val response = PSALookupErrorResult("Resource not found")
+      Logger.error(response.reason)
+      Future.successful(NotFound(Json.toJson(response)))
     }
     else {
       Logger.info("Successful request submitted")
-      Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 1, BigDecimal.exact("25000.00")))))
+      Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 1, Some(BigDecimal.exact("25000.00"))))))
     }
   }
 
