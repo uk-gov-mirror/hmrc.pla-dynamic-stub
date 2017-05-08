@@ -37,7 +37,7 @@ object TestData {
   val emptyHeadersExample = Map[String, String]()
   val invalidRequestJsError = JsError("invalid request body")
 
-  val validResponse = "\"pensionSchemeAdministratorCheckReference\":\"PSA12345678A\",\"ltaType\":7,\"psaCheckResult\":1,\"protectedAmount\":25000"
+  val validResponse = "\"pensionSchemeAdministratorCheckReference\":\"PSA12345678A\",\"ltaType\":5,\"psaCheckResult\":1,\"protectedAmount\":25000"
   val notFoundResponse = "\"reason\":\"Resource not found\""
 }
 
