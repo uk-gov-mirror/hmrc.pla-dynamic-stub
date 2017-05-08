@@ -232,7 +232,7 @@ trait PLAStubController extends BaseController {
     }
     else {
       Logger.info("Successful request submitted")
-      Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 1, Some(BigDecimal.exact("25000.00"))))))
+      Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 5, 1, Some(BigDecimal.exact("25000.00"))))))
     }
   }
 
