@@ -21,7 +21,7 @@ import play.api.libs.json.Json
 case class PSALookupUpdatedResult(pensionSchemeAdministratorCheckReference: String,
                                   ltaType: Int,
                                   psaCheckResult: Int,
-                                  relevantAmount: Option[BigDecimal])
+                                  protectedAmount: Option[BigDecimal])
 
 object PSALookupUpdatedResult {
   implicit val psaLookupUpdatedResultFormat = Json.format[PSALookupUpdatedResult]

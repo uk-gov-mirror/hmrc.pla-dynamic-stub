@@ -225,12 +225,7 @@ trait PLAStubController extends BaseController {
       Logger.error(errorMsg)
       val response = PSALookupErrorResult(errorMsg)
       Future.successful(BadRequest(Json.toJson(response)))
-    } else if (psaRef.endsWith("Z") | ltaRef.endsWith("Z")) {
-      val response = PSALookupErrorResult("Resource not found")
-      Logger.error(response.reason)
-      Future.successful(NotFound(Json.toJson(response)))
-    }
-    else {
+    } else {
       Logger.info("Successful request submitted")
       returnPSACheckResult(psaRef, ltaRef)
     }
@@ -263,12 +258,12 @@ trait PLAStubController extends BaseController {
         Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 6, 1, Some(BigDecimal.exact("39495.88"))))))
       case ("PSA12345670H", "A234555B") =>
         Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 1, Some(BigDecimal.exact("39495.88"))))))
-//      case ("PSA12345670I", "A234556B") =>
-//        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 0, Some(BigDecimal.exact("39495.88"))))))
-//      case ("PSA12345670J", "IP141000000007A") =>
-//        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 2, 0, Some(BigDecimal.exact("39495.88"))))))
+      //      case ("PSA12345670I", "A234556B") =>
+      //        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 0, Some(BigDecimal.exact("39495.88"))))))
+      //      case ("PSA12345670J", "IP141000000007A") =>
+      //        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 2, 0, Some(BigDecimal.exact("39495.88"))))))
       case ("PSA12345678A", "IP141000000000A") =>
-        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 1, Some(BigDecimal.exact("25000"))))))
+        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 5, 1, Some(BigDecimal.exact("25000"))))))
       case _ =>
         val response = PSALookupErrorResult("Resource not found")
         Logger.error(response.reason)
