@@ -232,11 +232,49 @@ trait PLAStubController extends BaseController {
     }
     else {
       Logger.info("Successful request submitted")
-      Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 1, Some(BigDecimal.exact("25000.00"))))))
+      returnPSACheckResult(psaRef, ltaRef)
     }
   }
 
   // private methods
+
+  /**
+    * When passed a psaRef and ltaRef, return specific results used for testing purposes.
+    *
+    * @param psaRef
+    * @param ltaRef
+    * @return
+    */
+  private def returnPSACheckResult(psaRef: String, ltaRef: String): Future[Result] = {
+    (psaRef, ltaRef) match {
+      case ("PSA12345670C", "FP161000000000A") =>
+        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 1, 1, Some(BigDecimal.exact("39495.88"))))))
+      case ("PSA12345670A", "IP141000000001A") =>
+        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 2, 1, Some(BigDecimal.exact("39495.88"))))))
+      case ("PSA12345670B", "IP161000000002A") =>
+        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 3, 1, Some(BigDecimal.exact("39495.88"))))))
+      case ("PSA12345670D", "A234551A") =>
+        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 2, 1, Some(BigDecimal.exact("39495.88"))))))
+      case ("PSA12345670E", "A234552B") =>
+        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 4, 1, Some(BigDecimal.exact("39495.88"))))))
+      case ("PSA12345670F", "A234553B") =>
+        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 5, 1, Some(BigDecimal.exact("39495.88"))))))
+      case ("PSA12345670G", "A234554B") =>
+        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 6, 1, Some(BigDecimal.exact("39495.88"))))))
+      case ("PSA12345670H", "A234555B") =>
+        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 1, Some(BigDecimal.exact("39495.88"))))))
+//      case ("PSA12345670I", "A234556B") =>
+//        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 0, Some(BigDecimal.exact("39495.88"))))))
+//      case ("PSA12345670J", "IP141000000007A") =>
+//        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 2, 0, Some(BigDecimal.exact("39495.88"))))))
+      case ("PSA12345678A", "IP141000000000A") =>
+        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 1, Some(BigDecimal.exact("25000"))))))
+      case _ =>
+        val response = PSALookupErrorResult("Resource not found")
+        Logger.error(response.reason)
+        Future.successful(NotFound(Json.toJson(response)))
+    }
+  }
 
   /**
     * When passed an exception trigger, either returns the corresponding error response or throws he correct exception/timeout
