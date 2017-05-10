@@ -243,9 +243,9 @@ trait PLAStubController extends BaseController {
   private def returnPSACheckResult(psaRef: String, ltaRef: String): Future[Result] = {
     (psaRef, ltaRef) match {
       case ("PSA12345670C", "FP161000000000A") =>
-        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 1, 1, Some(BigDecimal.exact("39495.88"))))))
+        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 1, 1, Some(BigDecimal.exact("1000000.00"))))))
       case ("PSA12345670A", "IP141000000001A") =>
-        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 2, 1, Some(BigDecimal.exact("39495.88"))))))
+        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 2, 1, Some(BigDecimal.exact("100000.00"))))))
       case ("PSA12345670B", "IP161000000002A") =>
         Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 3, 1, Some(BigDecimal.exact("39495.88"))))))
       case ("PSA12345670D", "A234551A") =>
