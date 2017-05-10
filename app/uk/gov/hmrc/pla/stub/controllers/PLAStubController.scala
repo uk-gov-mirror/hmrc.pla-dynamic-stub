@@ -258,10 +258,10 @@ trait PLAStubController extends BaseController {
         Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 6, 1, Some(BigDecimal.exact("39495.88"))))))
       case ("PSA12345670H", "A234555B") =>
         Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 1, Some(BigDecimal.exact("39495.88"))))))
-      //      case ("PSA12345670I", "A234556B") =>
-      //        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 0, Some(BigDecimal.exact("39495.88"))))))
-      //      case ("PSA12345670J", "IP141000000007A") =>
-      //        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 2, 0, Some(BigDecimal.exact("39495.88"))))))
+      case ("PSA12345670I", "A234556B") =>
+        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 7, 0, Some(BigDecimal.exact("39495.88"))))))
+      case ("PSA12345670J", "IP141000000007A") =>
+        Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 2, 0, Some(BigDecimal.exact("39495.88"))))))
       case ("PSA12345678A", "IP141000000000A") =>
         Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 5, 1, Some(BigDecimal.exact("25000"))))))
       case _ =>
