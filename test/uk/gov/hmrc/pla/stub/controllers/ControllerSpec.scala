@@ -117,7 +117,7 @@ class PLAStubControllerSpec extends UnitSpec with OneAppPerSuite {
     "return a 400 BadRequest with body when provided invalid psa and lta references" in {
       val controller = PLAStubController
       val result = controller.updatedPSALookup("", "").apply(FakeRequest().withHeaders(TestData.envHeader, TestData.authHeader))
-      val error = "Your submission contains one or more errors. Failed Parameter(s) - [pensionSchemeAdministratorCheckReference,lifetimeAllowanceReference]"
+      val error = "Your submission contains one or more errors. Failed Parameter(s) - [pensionSchemeAdministratorCheckReference, lifetimeAllowanceReference]"
       status(result) shouldBe BAD_REQUEST
       contentAsString(result) should include(error)
     }

@@ -217,7 +217,7 @@ trait PLAStubController extends BaseController {
       Future.successful(Unauthorized(Json.toJson(PSALookupErrorResult("Required OAuth credentials not provided"))))
     } else if (!validationResult._1 | !validationResult._2) {
       val refValidationResponse = validationResult match {
-        case (false, false) => "pensionSchemeAdministratorCheckReference,lifetimeAllowanceReference"
+        case (false, false) => "pensionSchemeAdministratorCheckReference, lifetimeAllowanceReference"
         case (false, true) => "pensionSchemeAdministratorCheckReference"
         case (true, false) => "lifetimeAllowanceReference"
       }
