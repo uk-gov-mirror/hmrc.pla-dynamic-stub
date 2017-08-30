@@ -34,6 +34,7 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "logback-json-logger" % logbackJsonLoggerVersion,
     "uk.gov.hmrc" %% "play-reactivemongo" % playReactiveMongoVersion,
     "uk.gov.hmrc" %% "stub-data-generator" % "0.4.0",
+    "org.scalacheck" %% "scalacheck" % "1.13.5",
     "io.github.amrhassan" %% "scalacheck-cats" % "0.3.2"
   )
 

@@ -46,6 +46,13 @@ object Generator {
     Gen.oneOf ( refOne, refTwo ).map{_.mkString}
   }
 
+  /**
+    * "^PSA[0-9]{8}[A-Z]?$"
+    */
+  val pensionSchemeAdministratorCheckReferenceGen: Gen[String] =
+    pattern"99999999Z".map("PSA" + _)
+
+
   val genTime: Gen[LocalTime] = Gen.choose(0, 24*60*60).map{
     x => LocalTime.parse(
       {BigInt(1000000000L) * x}.toString,
@@ -62,12 +69,17 @@ object Generator {
     Gen.date(2014, 2017).map { _.format(ISO_LOCAL_DATE) }
   }.map(PensionDebit.apply)
 
-  def genProtection(nino: String): Gen[Protection] =
-    Gen.choose(1,5) flatMap (genProtection(nino,_))
+  def genProtection(nino: String): Gen[Protection] = {
+    for {
+      id <- Gen.choose(1,5)
+      version <- Gen.choose(1,5)
+      protection <- genProtection(nino, id, version)
+    } yield protection
+  }
 
-  def genProtection(nino: String, version: Int): Gen[Protection] = {
-    Gen.const(nino) |@|   // nino
-    Gen.choose(1,4).map{_.toLong} |@|       // id
+  def genProtection(nino: String, id: Long, version: Int): Gen[Protection] = {
+    Gen.const(nino) |@|                     // nino
+    Gen.const(id) |@|                       // id
     Gen.const(version) |@|                  // version
     Gen.choose(1,7) |@|                     // `type`
     Gen.choose(1,6) |@|                     // status
@@ -95,4 +107,10 @@ object Generator {
     Gen.listOfN(version - 1, Gen.alphaStr).
       sometimes                             // previousVersions
   }.map(Protection.apply)
+
+  def genProtections(nino: String): Gen[Protections] = {
+    Gen.const(nino) |@|
+      pensionSchemeAdministratorCheckReferenceGen.sometimes |@|
+      Gen.choose(2,5).flatMap { n => Gen.listOfN(n, genProtection(nino)) }
+  }.map(Protections.apply)
 }

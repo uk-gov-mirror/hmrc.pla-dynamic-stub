@@ -32,6 +32,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Random
 
+import uk.gov.hmrc.smartstub.{Generator => _, _}
+import uk.gov.hmrc.smartstub.Enumerable.instances.ninoEnumNoSpaces
+
 /**
   * The controller for the Protect your Lifetime Allowance (PLA) service REST API dynamic stub
   */
@@ -66,6 +69,22 @@ trait PLAStubController extends BaseController {
 
       val result = Protections(nino, Some(psaCheckRef), resultProtections.toList)
       Ok(Json.toJson(result))
+    }
+  }
+
+  def readProtectionsNew(nino: String): Action[AnyContent] = Action { implicit request =>
+      val result = Generator.genProtections(nino).seeded(nino)
+      Ok(Json.toJson(result))
+  }
+
+  // TODO - important to find out if version should be used - see error responses on readProtection
+  // my thinking is not as the app route described in DES API 3b doesn't exist
+  def readProtectionNew(nino: String, protectionId: Long, version: Option[Int]): Action[AnyContent] = Action { implicit request =>
+    val protections: Option[Protections] = Generator.genProtections(nino).seeded(nino)
+    val protection: Option[Protection] = protections.get.protections.find(p => p.id == protectionId)
+    protection match {
+      case Some(protection) => Ok(Json.toJson(protection))
+      case None => NotFound(Json.toJson(Error("no protection found for specified protection id")))
     }
   }
 
