@@ -32,7 +32,9 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "play-health" % playHealthVersion,
     "uk.gov.hmrc" %% "play-config" % playConfigVersion,
     "uk.gov.hmrc" %% "logback-json-logger" % logbackJsonLoggerVersion,
-    "uk.gov.hmrc" %% "play-reactivemongo" % playReactiveMongoVersion
+    "uk.gov.hmrc" %% "play-reactivemongo" % playReactiveMongoVersion,
+    "uk.gov.hmrc" %% "stub-data-generator" % "0.4.0",
+    "io.github.amrhassan" %% "scalacheck-cats" % "0.3.2"
   )
 
   trait TestDependencies {
@@ -55,5 +57,3 @@ private object AppDependencies {
 
   def apply() = compile ++ Test()
 }
-
-
