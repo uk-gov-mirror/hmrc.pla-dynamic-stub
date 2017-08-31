@@ -17,8 +17,9 @@
 package uk.gov.hmrc.pla.stub.model
 
 import java.time.LocalDateTime
-import play.api.libs.json.{Json,JsValue,JsPath}
-import play.api.libs.json.{Reads,Writes,Format}
+
+import play.api.libs.json.{JsPath, JsValue, Json}
+import play.api.libs.json.{Format, Reads, Writes}
 import play.api.libs.functional.syntax._
 
 import scala.util.Random
@@ -44,7 +45,7 @@ case class Protection(
     pensionDebitStartDate: Option[Double] = None,
     pensionDebitTotalAmount: Option[Double] = None,
     pensionDebits: Option[List[PensionDebit]] = None,
-    previousVersions: Option[List[String]] = None) /* not stored on DB - dynamically generated and added to response */ {
+    previousVersions: Option[List[Version]] = None) /* not stored on DB - dynamically generated and added to response */ {
 
       import Protection.Type._
       def requestedType: Option[Protection.Type.Value] = `type` match {
@@ -117,4 +118,5 @@ object Protection {
   implicit val localDateTimeFormat = Format(localDateTimeReads, localDateTimeWrites)
 
   implicit lazy val protectionFormat: Format[Protection] = Json.format[Protection]
+
 }

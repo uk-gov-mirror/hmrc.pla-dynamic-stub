@@ -83,8 +83,11 @@ trait PLAStubController extends BaseController {
     val protections: Option[Protections] = Generator.genProtections(nino).seeded(nino)
     val protection: Option[Protection] = protections.get.protections.find(p => p.id == protectionId)
     protection match {
-      case Some(protection) => Ok(Json.toJson(protection))
+      case Some(protection) if version.isEmpty => Ok(Json.toJson(protection))
+      case Some(protection) if version.nonEmpty && protection.previousVersions.get.exists(p => p.version == version.get) =>
+        Ok(Json.toJson(protection.previousVersions.get.find(p => p.version == version.get).get))
       case None => NotFound(Json.toJson(Error("no protection found for specified protection id")))
+      case _ => NotFound(Json.toJson(Error("protection of specified id found, but no match for specified version")))
     }
   }
 
@@ -640,7 +643,8 @@ trait PLAStubController extends BaseController {
         routes.PLAStubController.readProtection(p.nino, p.id, Some(p.version)).absoluteURL()
       }) filter (_ => setPreviousVersions)
       // val self = Some(routes.PLAStubController.readProtection(protection.nino, protection.id, None).absoluteURL())
-      protection.copy(previousVersions = previousVersionList, notificationMsg = None)
+      protection.copy(notificationMsg = None)
+//      protection.copy(previousVersions = previousVersionList, notificationMsg = None)
     }
   }
 
