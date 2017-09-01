@@ -31,9 +31,11 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Random
-
 import uk.gov.hmrc.smartstub.{Generator => _, _}
 import uk.gov.hmrc.smartstub.Enumerable.instances.ninoEnumNoSpaces
+
+
+
 
 /**
   * The controller for the Protect your Lifetime Allowance (PLA) service REST API dynamic stub
@@ -49,36 +51,32 @@ trait PLAStubController extends BaseController {
   val protectionRepository: ProtectionRepository
   val exceptionTriggerRepository: ExceptionTriggerRepository
 
-  /**
-    * Get all current protections applicable to the specified Nino
-    *
-    * @param nino identifies the individual to whom the protections apply
-    * @return List of latest versions of each protection
-    **/
+  def readProtectionsNew(nino: String): Action[AnyContent] = Action { implicit request =>
+    val result = Generator.genProtections(nino).seeded(nino)
+    Ok(Json.toJson(result))
+  }
 
-  def readProtections(nino: String): Action[AnyContent] = WithExceptionTriggerCheckAction(nino).async { implicit request =>
-
-    protectionRepository.findAllVersionsOfAllProtectionsByNino(nino).map { (protections: Map[Long, List[Protection]]) =>
-
-      // get all current protections in the form expected in the result
-      val resultProtections = protections.values
-        .map { p => toResultProtection(p, None, setPreviousVersions = true) }
-        .collect { case Some(protection) => protection }
-
-      val psaCheckRef = genPSACheckRef(nino)
-
-      val result = Protections(nino, Some(psaCheckRef), resultProtections.toList)
-      Ok(Json.toJson(result))
+  def readProtectionNew(nino: String, protectionId: Long): Action[AnyContent] = Action { implicit request =>
+    val protections: Option[Protections] = Generator.genProtections(nino).seeded(nino)
+    val protection: Option[Protection] = protections.get.protections.find(p => p.id == protectionId)
+    protection match {
+      case Some(protection) => Ok(Json.toJson(protection))
+      case None => NotFound(Json.toJson(Error("no protection found for specified protection id")))
     }
   }
 
-  def readProtectionsNew(nino: String): Action[AnyContent] = Action { implicit request =>
-      val result = Generator.genProtections(nino).seeded(nino)
-      Ok(Json.toJson(result))
+  def readProtectionVersionNew(nino: String, protectionId: Long, version: Int): Action[AnyContent] = Action { implicit request =>
+    val protections: Option[Protections] = Generator.genProtections(nino).seeded(nino)
+    val protection: Option[Protection] = protections.get.protections.find(p => p.id == protectionId)
+    protection match {
+      case Some(protection) if protection.previousVersions.get.exists(p => p.version == version) =>
+        Ok(Json.toJson(protection.previousVersions.get.find(p => p.version == version).get))
+      case None => NotFound(Json.toJson(Error("no protection found for specified protection id")))
+      case _ => NotFound(Json.toJson(Error("protection of specified id found, but no match for specified version")))
+    }
   }
 
-  // TODO - important to find out if version should be used - see error responses on readProtection
-  // my thinking is not as the app route described in DES API 3b doesn't exist
+  // TODO - this is unused and shouldn't be if we're keeping to spec but leaving here as the old version used this approach
   def readProtectionNew(nino: String, protectionId: Long, version: Option[Int]): Action[AnyContent] = Action { implicit request =>
     val protections: Option[Protections] = Generator.genProtections(nino).seeded(nino)
     val protection: Option[Protection] = protections.get.protections.find(p => p.id == protectionId)
@@ -88,25 +86,6 @@ trait PLAStubController extends BaseController {
         Ok(Json.toJson(protection.previousVersions.get.find(p => p.version == version.get).get))
       case None => NotFound(Json.toJson(Error("no protection found for specified protection id")))
       case _ => NotFound(Json.toJson(Error("protection of specified id found, but no match for specified version")))
-    }
-  }
-
-
-  def readProtection(nino: String, protectionId: Long, version: Option[Int]) = Action.async { implicit request =>
-
-    protectionRepository.findAllVersionsOfProtectionByNinoAndId(nino, protectionId) map { protectionHistory: List[Protection] =>
-      toResultProtection(protectionHistory, version, setPreviousVersions = !version.isDefined)
-        .map { result =>
-          Ok(Json.toJson(result))
-        }
-        .getOrElse {
-          // no matching protection
-          val error = protectionHistory match {
-            case Nil => Error("no protection found for specified protection id")
-            case _ => Error("protection of specified id found, but no match for specified version")
-          }
-          NotFound(Json.toJson(error))
-        }
     }
   }
 
@@ -220,6 +199,21 @@ trait PLAStubController extends BaseController {
     }
   }
 
+  def psaLookupNew(ref: String, psaref: String): Action[JsValue] = Action(BodyParsers.parse.json) { implicit request =>
+    // decode the Nino from the psa ref
+    val c1 = psaref.substring(3, 4).toShort.toChar
+    val c2 = psaref.substring(5, 6).toShort.toChar
+    val nino = c1 + c2 + psaref.substring(7, 12)
+    val protections = Generator.genProtections(nino).seeded(nino).get.protections
+    val result = protections.find(p => p.protectionReference.contains(ref))
+    result match {
+      case Some(protection) if protection.status == 1 =>
+        Ok(Json.toJson(PSALookupResult(protection.`type`, validResult = true, protection.relevantAmount)))
+      case _ => Ok(Json.toJson(PSALookupResult(0, validResult = false, None)))
+    }
+  }
+
+
   /**
     * Updated Facility for Pension Scheme Administrator (PSA) to lookup/verify current protection details
     *
@@ -293,24 +287,24 @@ trait PLAStubController extends BaseController {
     }
   }
 
-  /**
-    * When passed an exception trigger, either returns the corresponding error response or throws he correct exception/timeout
-    *
-    * @param trigger
-    * @return
-    */
-  private def processExceptionTrigger(trigger: ExceptionTrigger): Future[Result] = {
-    import ExceptionTrigger.ExceptionType
-    trigger.extractedExceptionType match {
-      case ExceptionType.BadRequest => Future.successful(BadRequest("Simulated bad request"))
-      case ExceptionType.NotFound => Future.successful(NotFound("Simulated npot found"))
-      case ExceptionType.InternalServerError => Future.successful(InternalServerError("Simulated 500 error"))
-      case ExceptionType.BadGateway => Future.successful(BadGateway("Simulated 502 error"))
-      case ExceptionType.ServiceUnavailable => Future.successful(ServiceUnavailable("Simulated 503 error"))
-      case ExceptionType.UncaughtException => throw new Exception()
-      case ExceptionType.Timeout => Thread.sleep(60000); Future.successful(Ok)
+    /**
+      * When passed an exception trigger, either returns the corresponding error response or throws he correct exception/timeout
+      *
+      * @param trigger
+      * @return
+      */
+    private def processExceptionTrigger(trigger: ExceptionTrigger): Future[Result] = {
+      import ExceptionTrigger.ExceptionType
+      trigger.extractedExceptionType match {
+        case ExceptionType.BadRequest => Future.successful(BadRequest("Simulated bad request"))
+        case ExceptionType.NotFound => Future.successful(NotFound("Simulated npot found"))
+        case ExceptionType.InternalServerError => Future.successful(InternalServerError("Simulated 500 error"))
+        case ExceptionType.BadGateway => Future.successful(BadGateway("Simulated 502 error"))
+        case ExceptionType.ServiceUnavailable => Future.successful(ServiceUnavailable("Simulated 503 error"))
+        case ExceptionType.UncaughtException => throw new Exception()
+        case ExceptionType.Timeout => Thread.sleep(60000); Future.successful(Ok)
+      }
     }
-  }
 
   /**
     * Process an application for a new protection for which we have determined the relevant notification ID.
@@ -622,32 +616,32 @@ trait PLAStubController extends BaseController {
     "PSA" + d1d2 + d3d4 + nino.substring(2, 7) + nino.head
   }
 
-  /**
-    * Convert a stored protection history to the result protection object returned to the client
-    *
-    * @param protectionVersions  - must have at least one entry. The first entry is always assumed to be the
-    *                            latest version.
-    * @param version             if set then the result is the specified version of the protection,
-    *                            otherwise just returns the latest version
-    * @param setPreviousVersions if true then fill in the previousVersions field of the result, if and only if
-    *                            it is latest version of the protection that is returned as the overall result.
-    **/
-  private def toResultProtection(protectionVersions: List[Protection],
-                                 version: Option[Int],
-                                 setPreviousVersions: Boolean)(implicit request: Request[AnyContent]): Option[Protection] = {
-    val protectionOpt =
-      version.fold(protectionVersions.headOption)(v => protectionVersions.find(_.version == v))
-    protectionOpt map { protection: Protection =>
-      // generate previousVersions (if applicable) as well as self field into the result protection
-      val previousVersionList = Some(protectionVersions.tail map { p =>
-        routes.PLAStubController.readProtection(p.nino, p.id, Some(p.version)).absoluteURL()
-      }) filter (_ => setPreviousVersions)
-      // val self = Some(routes.PLAStubController.readProtection(protection.nino, protection.id, None).absoluteURL())
-      protection.copy(notificationMsg = None)
-//      protection.copy(previousVersions = previousVersionList, notificationMsg = None)
-    }
-  }
-
+  //  /**
+  //    * Convert a stored protection history to the result protection object returned to the client
+  //    *
+  //    * @param protectionVersions  - must have at least one entry. The first entry is always assumed to be the
+  //    *                            latest version.
+  //    * @param version             if set then the result is the specified version of the protection,
+  //    *                            otherwise just returns the latest version
+  //    * @param setPreviousVersions if true then fill in the previousVersions field of the result, if and only if
+  //    *                            it is latest version of the protection that is returned as the overall result.
+  //    **/
+  //  private def toResultProtection(protectionVersions: List[Protection],
+  //                                 version: Option[Int],
+  //                                 setPreviousVersions: Boolean)(implicit request: Request[AnyContent]): Option[Protection] = {
+  //    val protectionOpt =
+  //      version.fold(protectionVersions.headOption)(v => protectionVersions.find(_.version == v))
+  //    protectionOpt map { protection: Protection =>
+  //      // generate previousVersions (if applicable) as well as self field into the result protection
+  //      val previousVersionList = Some(protectionVersions.tail map { p =>
+  //        routes.PLAStubController.readProtection(p.nino, p.id, Some(p.version)).absoluteURL()
+  //      }) filter (_ => setPreviousVersions)
+  //      // val self = Some(routes.PLAStubController.readProtection(protection.nino, protection.id, None).absoluteURL())
+  //      protection.copy(notificationMsg = None)
+  ////      protection.copy(previousVersions = previousVersionList, notificationMsg = None)
+  //    }
+  //  }
+  //
   /**
     * Inject any relevant parameter values from Protection into the notification message
     *
@@ -687,40 +681,43 @@ trait PLAStubController extends BaseController {
   private def ltaRefValidator(ltaRef: String): Boolean = {
     ltaRef.matches("^(IP14|IP16|FP16)[0-9]{10}[ABCDEFGHJKLMNPRSTXYZ]$") | ltaRef.matches("^[1-9A][0-9]{6}[ABCDEFHXJKLMNYPQRSTZW]$")
   }
-}
 
-object ControllerHelper {
-  /*
+  //}
+
+  object ControllerHelper {
+    /*
    * Checks that the standard extra headers required for NPS requests are present in a request
    * @param headers a simple map of all request headers
    * @param the result of validating the request body
    * @rreturn the overall validation result, of non-success then will include both body and  header validation errors
    */
-  def addExtraRequestHeaderChecks[T](headers: Map[String, String], bodyValidationResultJs: JsResult[T]): JsResult[T] = {
-    val environment = headers.get("Environment")
-    val token = headers.get("Authorization")
-    val notSet = "<NOT SET>"
-    play.Logger.info("Request headers: environment =" + environment.getOrElse(notSet) + ", authorisation=" + token.getOrElse(notSet))
+    def addExtraRequestHeaderChecks[T](headers: Map[String, String], bodyValidationResultJs: JsResult[T]): JsResult[T] = {
+      val environment = headers.get("Environment")
+      val token = headers.get("Authorization")
+      val notSet = "<NOT SET>"
+      play.Logger.info("Request headers: environment =" + environment.getOrElse(notSet) + ", authorisation=" + token.getOrElse(notSet))
 
-    //  Ensure any header validation errors are accumulated with any body validation errors into a single JsError
-    //  (the below code is not so nice, could be a good use case for scalaz validation)
-    val noAuthHeaderErr = JsError("required header 'Authorisation' not set in NPS request")
-    val noEnvHeaderErr = JsError("required header 'Environment' not set in NPS request")
+      //  Ensure any header validation errors are accumulated with any body validation errors into a single JsError
+      //  (the below code is not so nice, could be a good use case for scalaz validation)
+      val noAuthHeaderErr = JsError("required header 'Authorisation' not set in NPS request")
+      val noEnvHeaderErr = JsError("required header 'Environment' not set in NPS request")
 
-    // 1. accumlate any header errors
-    def headerNotPresentErrors: Option[JsError] = (environment, token) match {
-      case (Some(_), Some(_)) => None
-      case (Some(_), None) => Some(noAuthHeaderErr)
-      case (None, Some(_)) => Some(noEnvHeaderErr)
-      case (None, None) => Some(noAuthHeaderErr ++ noEnvHeaderErr)
-    }
+      // 1. accumlate any header errors
+      def headerNotPresentErrors: Option[JsError] = (environment, token) match {
+        case (Some(_), Some(_)) => None
+        case (Some(_), None) => Some(noAuthHeaderErr)
+        case (None, Some(_)) => Some(noEnvHeaderErr)
+        case (None, None) => Some(noAuthHeaderErr ++ noEnvHeaderErr)
+      }
 
-    // 2. accumulate any header + any body errors
-    (bodyValidationResultJs, headerNotPresentErrors) match {
-      case (e1: JsError, e2: Some[JsError]) => e1 ++ e2.get
-      case (e1: JsError, _) => e1
-      case (_, e2: Some[JsError]) => e2.get
-      case _ => bodyValidationResultJs // success case
+      // 2. accumulate any header + any body errors
+      (bodyValidationResultJs, headerNotPresentErrors) match {
+        case (e1: JsError, e2: Some[JsError]) => e1 ++ e2.get
+        case (e1: JsError, _) => e1
+        case (_, e2: Some[JsError]) => e2.get
+        case _ => bodyValidationResultJs // success case
+      }
     }
   }
+
 }

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.pla.stub.model
 
-import play.api.libs.json.Json
+import play.api.libs.json._
 
 case class Version(
                     version: Int,
@@ -24,6 +24,36 @@ case class Version(
                     protection: Protection)
 
 object Version {
-  implicit val versionFormat = Json.format[Version]
+
+
+//  implicit val versionWrites: Writes[Version] = new Writes[Version] {
+//    override def writes(a: Version): JsValue = JsObject(Map(
+//      "version" -> JsNumber(a.version),
+//      "link" -> JsString(a.link)
+//    ) )
+//  }
+
+
+  /**
+    * This is a bit hacky but can't find a better way
+    */
+  implicit object VersionFormat extends Format[Version] {
+    override def writes(o: Version): JsValue = {
+      Json.obj("version" -> o.version,
+        "link" -> o.link)
+    }
+
+   override def reads(json: JsValue): JsResult[Version] =
+     JsSuccess(Version(-1, "foo", dummyProtection))
+  }
+
+  val dummyProtection = new Protection("nino",
+    1L,
+    1,
+    1,
+    1,
+    None,
+    None,
+    None)
 }
 
