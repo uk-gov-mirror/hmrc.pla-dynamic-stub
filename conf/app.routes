@@ -8,3 +8,6 @@ POST    /individual/:nino/protection        uk.gov.hmrc.pla.stub.controllers.PLA
 
 # General PSA lookup route
 GET     /psa/check-protection                 uk.gov.hmrc.pla.stub.controllers.PLAStubController.psaLookup(ref,psaref)
+
+# Updated PSA lookup route
+GET     /scheme-administrator/certificate-lookup uk.gov.hmrc.pla.stub.controllers.PLAStubController.updatedPSALookup(pensionSchemeAdministratorCheckReference,lifetimeAllowanceReference)
