@@ -29,7 +29,7 @@ object Generator {
 
 
   /**
-    * "^[1-9A][0-9]{6}[ABCDEFHXJKLMNYPQRSTZW]|(IP14|IP16|FP16)[0-9]{10}[ABCDEFGHJKLMNPRSTXYZ]$"
+    * "^[1-9A][0-9]{6}[ABCDEFHXJKLMNYPQRSTZW]|(IP14|IP16|FP16)[0-9]{10}[ABCDEFGHJKLMNPRSTXYZ]$^"
     **/
   val refGen: Gen[String] = {
     val refOne = List(
@@ -54,7 +54,7 @@ object Generator {
   }
 
   /**
-    * "^PSA[0-9]{8}[A-Z]?$"
+    * "^PSA[0-9]{8}[A-Z]?$^"
     **/
   val pensionSchemeAdministratorCheckReferenceGen: Gen[String] =
     pattern"99999999Z".map("PSA" + _)
@@ -141,6 +141,7 @@ object Generator {
       Gen.choose(2, 5).flatMap { n => Gen.listOfN(n, genProtection(nino)) }
   }.map(Protections.apply)
 
-  lazy val protectionsStore: PersistentGen[String, Protections]=  genProtections("").asMutable[String]
+  val protectionsStore: PersistentGen[String, Protections]=  genProtections("").asMutable[String]
+
 
 }

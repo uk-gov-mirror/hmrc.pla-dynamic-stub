@@ -20,20 +20,20 @@ import java.time.LocalDateTime
 
 import play.api.Logger
 import play.api.libs.json._
-import play.api.mvc.{Action,AnyContent, _}
-import uk.gov.hmrc.pla.stub.actions.ExceptionTriggersActions.WithExceptionTriggerCheckAction
+import play.api.mvc.{Action, AnyContent, _}
 import uk.gov.hmrc.pla.stub.model._
 import uk.gov.hmrc.pla.stub.notifications.{CertificateStatus, Notifications}
 import uk.gov.hmrc.pla.stub.repository.{ExceptionTriggerRepository, MongoExceptionTriggerRepository, MongoProtectionRepository, ProtectionRepository}
-import uk.gov.hmrc.pla.stub.rules._
 import uk.gov.hmrc.pla.stub.services.PLAProtectionService
 import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.smartstub.Enumerable.instances.ninoEnumNoSpaces
+import uk.gov.hmrc.smartstub.{Generator => _, _}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Random
-import uk.gov.hmrc.smartstub.{Generator => _, _}
-import uk.gov.hmrc.smartstub.Enumerable.instances.ninoEnumNoSpaces
+
+
 
 
 
@@ -608,42 +608,7 @@ trait PLAStubController  extends BaseController {
     ltaRef.matches("^(IP14|IP16|FP16)[0-9]{10}[ABCDEFGHJKLMNPRSTXYZ]$") | ltaRef.matches("^[1-9A][0-9]{6}[ABCDEFHXJKLMNYPQRSTZW]$")
   }
 
-  //}
-
-  object ControllerHelper {
-    /*
-   * Checks that the standard extra headers required for NPS requests are present in a request
-   * @param headers a simple map of all request headers
-   * @param the result of validating the request body
-   * @rreturn the overall validation result, of non-success then will include both body and  header validation errors
-   */
-    def addExtraRequestHeaderChecks[T](headers: Map[String, String], bodyValidationResultJs: JsResult[T]): JsResult[T] = {
-      val environment = headers.get("Environment")
-      val token = headers.get("Authorization")
-      val notSet = "<NOT SET>"
-      play.Logger.info("Request headers: environment =" + environment.getOrElse(notSet) + ", authorisation=" + token.getOrElse(notSet))
-
-      //  Ensure any header validation errors are accumulated with any body validation errors into a single JsError
-      //  (the below code is not so nice, could be a good use case for scalaz validation)
-      val noAuthHeaderErr = JsError("required header 'Authorisation' not set in NPS request")
-      val noEnvHeaderErr = JsError("required header 'Environment' not set in NPS request")
-
-      // 1. accumlate any header errors
-      def headerNotPresentErrors: Option[JsError] = (environment, token) match {
-        case (Some(_), Some(_)) => None
-        case (Some(_), None) => Some(noAuthHeaderErr)
-        case (None, Some(_)) => Some(noEnvHeaderErr)
-        case (None, None) => Some(noAuthHeaderErr ++ noEnvHeaderErr)
-      }
-
-      // 2. accumulate any header + any body errors
-      (bodyValidationResultJs, headerNotPresentErrors) match {
-        case (e1: JsError, e2: Some[JsError]) => e1 ++ e2.get
-        case (e1: JsError, _) => e1
-        case (_, e2: Some[JsError]) => e2.get
-        case _ => bodyValidationResultJs // success case
-      }
-    }
   }
 
-}
+
+
