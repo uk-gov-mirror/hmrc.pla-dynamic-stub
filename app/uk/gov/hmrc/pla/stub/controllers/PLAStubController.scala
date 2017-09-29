@@ -52,7 +52,7 @@ trait PLAStubController  extends BaseController {
   val protectionRepository: ProtectionRepository
   val exceptionTriggerRepository: ExceptionTriggerRepository
 
-  def readProtectionsNew(nino: String): Action[AnyContent] = Action { implicit request =>
+  def readProtections(nino: String): Action[AnyContent] = Action { implicit request =>
     val result = PLAProtectionService.retrieveProtections(nino)
     result match {
       case Some(protection) => Ok(Json.toJson(protection))
@@ -60,7 +60,7 @@ trait PLAStubController  extends BaseController {
     }
   }
 
-  def readProtectionNew(nino: String, protectionId: Long): Action[AnyContent] = Action { implicit request =>
+  def readProtection(nino: String, protectionId: Long): Action[AnyContent] = Action { implicit request =>
     val protections: Option[Protections] = PLAProtectionService.retrieveProtections(nino)
     val protection: Option[Protection] = protections.get.protections.find(p => p.id == protectionId)
     protection match {
@@ -69,7 +69,7 @@ trait PLAStubController  extends BaseController {
     }
   }
 
-  def readProtectionVersionNew(nino: String, protectionId: Long, version: Int): Action[AnyContent] = Action { implicit request =>
+  def readProtectionVersion(nino: String, protectionId: Long, version: Int): Action[AnyContent] = Action { implicit request =>
     val protections: Option[Protections] = PLAProtectionService.retrieveProtections(nino)
     val protection: Option[Protection] = protections.get.protections.find(p => p.id == protectionId)
     protection match {
@@ -81,7 +81,7 @@ trait PLAStubController  extends BaseController {
   }
 
   // TODO - this is unused and shouldn't be if we're keeping to spec but leaving here as the old version used this approach
-  def readProtectionNew(nino: String, protectionId: Long, version: Option[Int]): Action[AnyContent] = Action { implicit request =>
+  def readProtection(nino: String, protectionId: Long, version: Option[Int]): Action[AnyContent] = Action { implicit request =>
     val protections: Option[Protections] = PLAProtectionService.retrieveProtections(nino)
     val protection: Option[Protection] = protections.get.protections.find(p => p.id == protectionId)
     protection match {
@@ -93,37 +93,17 @@ trait PLAStubController  extends BaseController {
     }
   }
 
-  def createProtectionNew(nino:String) : Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def createProtection(nino:String) : Action[JsValue] = Action.async(parse.json) { implicit request =>
     withJsonBody[CreateLTAProtectionRequest](data =>
       Future.successful(Ok(Json.toJson(PLAProtectionService.createLTAProtectionResponse(data)))))
   }
 
-  def updateProtectionNew(nino:String,protectionId: Long) : Action[JsValue]  = Action.async(parse.json) { implicit request =>
+  def updateProtection(nino:String,protectionId: Long) : Action[JsValue]  = Action.async(parse.json) { implicit request =>
     withJsonBody[UpdateLTAProtectionRequest](data =>
       Future.successful(PLAProtectionService.updateLTAProtection(data,nino,protectionId)))
   }
 
-  /**
-    * Facility for Pension Scheme Administartor (PSA) to lookup/verify protection details
-    *
-    * @param ref    the protecion reference supplied to the PSA by the individual
-    * @param psaref the PSA check reference supplied to the PSA by the individual
-    * @return a simple result indicating whether valid certificate found, and if valid the type and relevant amount.
-    */
-  def psaLookup(ref: String, psaref: String) = Action.async(BodyParsers.parse.json) { implicit request =>
-    // decode the Nino from the psa ref
-    val c1 = psaref.substring(3, 4).toShort.toChar
-    val c2 = psaref.substring(5, 6).toShort.toChar
-    val nino = c1 + c2 + psaref.substring(7, 12)
-    protectionRepository.findLatestVersionsOfAllProtectionsByNino(nino).map { (protections: List[Protection]) =>
-      val result = protections.find(_.protectionReference.contains(ref))
-      result match {
-        case Some(protection) if protection.status == 1 =>
-          Ok(Json.toJson(PSALookupResult(protection.`type`, validResult = true, protection.relevantAmount)))
-        case _ => Ok(Json.toJson(PSALookupResult(0, validResult = false, None)))
-      }
-    }
-  }
+
 
   def psaLookupNew(ref: String, psaref: String): Action[JsValue] = Action(BodyParsers.parse.json) { implicit request =>
     // decode the Nino from the psa ref

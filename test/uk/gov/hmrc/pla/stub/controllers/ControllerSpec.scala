@@ -19,17 +19,14 @@ package uk.gov.hmrc.pla.stub.controllers
 import org.mockito.Mockito.when
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
-//import play.api.http.MediaRange.parse
 import play.api.libs.json._
-import play.api.mvc.{Action,_}
-import play.api.mvc.Results.Ok
+import play.api.mvc.Action
 import play.api.mvc.BodyParsers._
+import play.api.mvc.Results.Ok
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.pla.stub.model.{CreateLTAProtectionResponse, _}
-import uk.gov.hmrc.pla.stub.services.PLAProtectionService
+import uk.gov.hmrc.pla.stub.model._
 import uk.gov.hmrc.play.test.UnitSpec
-
 
 import scala.concurrent.Future
 
@@ -63,11 +60,11 @@ class PLAStubControllerSpec extends UnitSpec with OneAppPerSuite with MockitoSug
 
       val nino = "RC966967C"
       val protections = Json.fromJson[Protections](successfulProtectionsRetrieveOutput)
-      when(mockController.readProtectionsNew(nino)).thenReturn(Action {
+      when(mockController.readProtections(nino)).thenReturn(Action {
         Ok(Json.toJson(protections.get))
       })
 
-      val response = mockController.readProtectionsNew(nino).apply(FakeRequest("GET", "/individual/RC966967C/protections/"))
+      val response = mockController.readProtections(nino).apply(FakeRequest("GET", s"/individual/$nino/protections/"))
       status(response) shouldBe OK
       contentAsJson(response).shouldBe(successfulProtectionsRetrieveOutput)
 
@@ -76,12 +73,13 @@ class PLAStubControllerSpec extends UnitSpec with OneAppPerSuite with MockitoSug
   "Read Protection" should {
     "return Status: OK Body: Protection for given nino and protection id on retrieval protection request" in {
       val nino = "RC966967C"
+      val protectionId=1
       val protection = Json.fromJson[Protection](successfulProtectionRetrieveOutput)
-      when(mockController.readProtectionNew(nino, 1)).thenReturn(Action {
+      when(mockController.readProtection(nino, protectionId)).thenReturn(Action {
         Ok(Json.toJson(protection.get))
       })
 
-      val response = mockController.readProtectionNew(nino, 1).apply(FakeRequest("GET", "/individual/RC966967C/protections/1"))
+      val response = mockController.readProtection(nino, 1).apply(FakeRequest("GET", s"/individual/$nino/protections/$protectionId"))
       status(response) shouldBe OK
       contentAsJson(response).shouldBe(successfulProtectionRetrieveOutput)
 
@@ -91,11 +89,14 @@ class PLAStubControllerSpec extends UnitSpec with OneAppPerSuite with MockitoSug
   "Read Protection Version" should {
     "return Status: OK Body: Protection for given nino , protection id and version on retrieval protection request" in {
       val nino = "RC966967C"
+      val protectionId=1
+      val versionId=1
       val protection = Json.fromJson[Protection](successfulProtectionRetrieveOutput)
-      when(mockController.readProtectionVersionNew(nino, 1,1)).thenReturn(Action {
+      when(mockController.readProtectionVersion(nino, protectionId,versionId)).thenReturn(Action {
         Ok(Json.toJson(protection.get))
       })
-      val response = mockController.readProtectionVersionNew(nino, 1,1).apply(FakeRequest("GET", "/individual/RC966967C/protections/1/version/1"))
+      val response = mockController.readProtectionVersion(nino, protectionId,versionId)
+        .apply(FakeRequest("GET", s"/individual/$nino/protections/$protectionId/version/$versionId"))
       status(response) shouldBe OK
       contentAsJson(response).shouldBe(successfulProtectionRetrieveOutput)
 
@@ -104,11 +105,11 @@ class PLAStubControllerSpec extends UnitSpec with OneAppPerSuite with MockitoSug
   "Create Protection" should {
     "return Status: OK Body: CreateLTAProtectionResponse for successful valid CreateLTAProtectionRequest with all optional data" in {
       val nino = "RC966967C"
-      when(mockController.createProtectionNew(nino)).thenReturn(Action.async(parse.json) {
+      when(mockController.createProtection(nino)).thenReturn(Action.async(parse.json) {
         _ =>
           Future.successful(Ok(validCreateProtectionResponseOutput))
       })
-      val response = mockController.createProtectionNew(nino).apply(FakeRequest("POST", "/individual/RC966967C/protection/")
+      val response = mockController.createProtection(nino).apply(FakeRequest("POST", s"/individual/$nino/protection/")
         .withBody(validCreateProtectionRequestInput))
       status(response) shouldBe OK
       contentAsJson(response).shouldBe(validCreateProtectionResponseOutput)
@@ -120,11 +121,11 @@ class PLAStubControllerSpec extends UnitSpec with OneAppPerSuite with MockitoSug
     "return Status: OK Body: UpdateLTAProtectionResponse for successful valid UpdateLTAProtectionRequest with all optional data" in {
       val nino = "RC966967C"
       val protectionId=5
-      when(mockController.updateProtectionNew(nino,protectionId)).thenReturn(Action.async(parse.json) {
+      when(mockController.updateProtection(nino,protectionId)).thenReturn(Action.async(parse.json) {
         _ =>
           Future.successful(Ok(validUpdateProtectionResponseOutput))
       })
-      val response = mockController.updateProtectionNew(nino,protectionId).apply(FakeRequest("POST", "/individual/RC966967C/protections/5")
+      val response = mockController.updateProtection(nino,protectionId).apply(FakeRequest("POST", s"/individual/$nino/protections/$protectionId")
         .withBody(validUpdateProtectionRequestInput))
       status(response) shouldBe OK
       contentAsJson(response).shouldBe(validUpdateProtectionResponseOutput)

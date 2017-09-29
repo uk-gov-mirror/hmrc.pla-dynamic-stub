@@ -21,7 +21,6 @@ import java.util.Random
 import cats.implicits._
 import org.scalacheck._
 import org.scalacheck.support.cats._
-import uk.gov.hmrc.smartstub.Enumerable.instances.utrEnum
 import uk.gov.hmrc.smartstub._
 import play.api.libs.json._
 import uk.gov.hmrc.play.test.UnitSpec
@@ -49,19 +48,13 @@ object Generator {
       _.mkString
     }
   }
-/*
-  def randomFP16ProtectionReference: String =("FP16" + Math.abs(rand.nextLong)).substring(0,9) + "C"
-  def randomIP16ProtectionReference: String =("IP16" + Math.abs(rand.nextLong)).substring(0,9) + "B"
-  def randomIP14ProtectionReference: String =("IP14" + Math.abs(rand.nextLong)).substring(0,9) + "A"
-  def randomOlderProtectionReference: String =("A" +  Math.abs(rand.nextLong)).substring(0,5) + "A"
-*/
 
   def refGenFP16: Option[String] =  refGenForProtectionType("FP16").seeded(1L)
   def refGenIP16: Option[String] =  refGenForProtectionType("IP16").seeded(1L)
   def refGenIP14: Option[String] =  refGenForProtectionType("IP14").seeded(1L)
   def randomOlderProtectionReference: Option[String] =refGenForProtectionType("A").seeded(1L)
   /**
-    * "^PSA[0-9]{8}[A-Z]?$"
+    * "^PSA[0-9]{8}[A-Z]?$^"
     **/
   val pensionSchemeAdministratorCheckReferenceGen: Gen[String] = pattern"99999999Z".map("PSA" + _)
 }
