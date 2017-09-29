@@ -50,11 +50,14 @@ private object AppDependencies {
         "org.scalatest" %% "scalatest" % scalaTestVersion % scope,
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
+        "org.mockito" % "mockito-core" % "2.7.22" % scope,
         "uk.gov.hmrc" %% "domain" % "3.7.0",
         "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope
       )
     }.test
+
   }
 
   def apply() = compile ++ Test()
 }
+
