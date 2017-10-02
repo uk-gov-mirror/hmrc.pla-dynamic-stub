@@ -132,8 +132,8 @@ object Generator {
       Gen.listOf(pensionDebitGen).
         sometimes |@|                                                    // pensionDebits
       genVersions(nino, id, version - 1).
-        map {_.some} |@|                                                     // previousVersions
-      None
+        map {_.some} |@|                                                 // previousVersions
+      None                                                               // withdrawnDate
   }.map(Protection.apply)
 
   def genProtections(nino: String): Gen[Protections] = {
