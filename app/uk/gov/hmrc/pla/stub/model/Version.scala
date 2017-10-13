@@ -25,6 +25,7 @@ case class Version(
 
 object Version {
 
+
   /**
     * This is a bit hacky but can't find a better way
     */
