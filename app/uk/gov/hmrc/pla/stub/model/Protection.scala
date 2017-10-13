@@ -45,7 +45,8 @@ case class Protection(
     pensionDebitStartDate: Option[Double] = None,
     pensionDebitTotalAmount: Option[Double] = None,
     pensionDebits: Option[List[PensionDebit]] = None,
-    previousVersions: Option[List[Version]] = None) /* not stored on DB - dynamically generated and added to response */ {
+    previousVersions: Option[List[Version]] = None,   /* not stored on DB - dynamically generated and added to response */
+    withdrawnDate: Option[String] = None)  {
 
       import Protection.Type._
       def requestedType: Option[Protection.Type.Value] = `type` match {
