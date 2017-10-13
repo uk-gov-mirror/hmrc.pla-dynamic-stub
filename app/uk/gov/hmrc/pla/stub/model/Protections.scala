@@ -30,9 +30,4 @@ case class Protections(
 object Protections {
   implicit val protectionsFormat = Json.format[Protections]
 
-//  implicit val protectionsWriter = new Writes[Protections] {
-//    override def writes(o: Protections) = {
-//      Json.obj("nino" -> o.nino,)
-//    }
-//  }
 }

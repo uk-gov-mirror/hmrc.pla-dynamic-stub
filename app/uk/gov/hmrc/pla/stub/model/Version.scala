@@ -25,15 +25,6 @@ case class Version(
 
 object Version {
 
-
-//  implicit val versionWrites: Writes[Version] = new Writes[Version] {
-//    override def writes(a: Version): JsValue = JsObject(Map(
-//      "version" -> JsNumber(a.version),
-//      "link" -> JsString(a.link)
-//    ) )
-//  }
-
-
   /**
     * This is a bit hacky but can't find a better way
     */
