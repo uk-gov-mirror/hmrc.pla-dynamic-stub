@@ -35,7 +35,10 @@ object CreateLTAProtectionRequest {
                                 preADayPensionInPayment: Option[Double] = None,
                                 postADayBCE: Option[Double] = None,
                                 uncrystallisedRights: Option[Double] = None,
-                                nonUKRights: Option[Double] = None) {
+                                nonUKRights: Option[Double] = None,
+                                certificateDate: Option[String] = None,
+                                protectedAmount: Option[Double] = None,
+                                protectionReference: Option[String]) {
 
     import uk.gov.hmrc.pla.stub.model.Protection.Type._
 
