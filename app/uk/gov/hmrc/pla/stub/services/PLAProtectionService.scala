@@ -41,6 +41,7 @@ object PLAProtectionService {
       nonUKRights = data.protection.nonUKRights,
       pensionDebits = data.pensionDebits,
       certificateDate = data.protection.certificateDate,
+      certificateTime = data.protection.certificateTime,
       protectedAmount = data.protection.protectedAmount,
       protectionReference = data.protection.protectionReference
     )
