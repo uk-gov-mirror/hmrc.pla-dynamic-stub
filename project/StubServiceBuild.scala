@@ -32,10 +32,7 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "play-health" % playHealthVersion,
     "uk.gov.hmrc" %% "play-config" % playConfigVersion,
     "uk.gov.hmrc" %% "logback-json-logger" % logbackJsonLoggerVersion,
-    "uk.gov.hmrc" %% "play-reactivemongo" % playReactiveMongoVersion,
-    "uk.gov.hmrc" %% "stub-data-generator" % "0.4.0",
-    "org.scalacheck" %% "scalacheck" % "1.13.5",
-    "io.github.amrhassan" %% "scalacheck-cats" % "0.3.2"
+    "uk.gov.hmrc" %% "play-reactivemongo" % playReactiveMongoVersion
   )
 
   trait TestDependencies {
@@ -50,14 +47,13 @@ private object AppDependencies {
         "org.scalatest" %% "scalatest" % scalaTestVersion % scope,
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-        "org.mockito" % "mockito-core" % "2.7.22" % scope,
         "uk.gov.hmrc" %% "domain" % "3.7.0",
         "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope
       )
     }.test
-
   }
 
   def apply() = compile ++ Test()
 }
+
 
