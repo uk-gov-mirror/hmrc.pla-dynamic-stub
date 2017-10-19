@@ -277,7 +277,6 @@ object ProtectionApplicationTestData {
   import CreateLTAProtectionRequest.ProtectionDetails
   val Fp2016 = ProtectionDetails(
     `type`=Protection.extractedType(Protection.Type.FP2016),
-    status=Protection.extractedStatus(Protection.Status.Open),
     relevantAmount=Some(1250000),
     preADayPensionInPayment=Some(0),
     postADayBCE=Some(0),
@@ -286,7 +285,6 @@ object ProtectionApplicationTestData {
 
   val Ip2014 = ProtectionDetails(
     `type`=Protection.extractedType(Protection.Type.IP2014),
-    status=Protection.extractedStatus(Protection.Status.Open),
     relevantAmount=Some(1250000),
     preADayPensionInPayment=Some(0),
     postADayBCE=Some(0),
@@ -296,7 +294,6 @@ object ProtectionApplicationTestData {
 
   val Ip2016 = ProtectionDetails(
     `type`=Protection.extractedType(Protection.Type.IP2016),
-    status=Protection.extractedStatus(Protection.Status.Open),
     relevantAmount=Some(1250000),
     preADayPensionInPayment=Some(0),
     postADayBCE=Some(0),
@@ -305,7 +302,6 @@ object ProtectionApplicationTestData {
 
   val Fp2014 = ProtectionDetails(
     `type`=Protection.extractedType(Protection.Type.FP2014),
-    status=Protection.extractedStatus(Protection.Status.Open),
     relevantAmount=Some(1250000),
     preADayPensionInPayment=Some(0),
     postADayBCE=Some(0),

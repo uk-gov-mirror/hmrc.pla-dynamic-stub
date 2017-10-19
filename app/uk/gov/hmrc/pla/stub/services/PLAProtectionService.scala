@@ -34,17 +34,16 @@ object PLAProtectionService {
     val protection : Protection = Generator.genProtection(data.nino).sample.get
     val newLTAProtection = protection.copy(
       `type` = data.protection.`type`,
-      status = data.protection.status,
       relevantAmount = data.protection.relevantAmount,
       preADayPensionInPayment = data.protection.preADayPensionInPayment,
       postADayBCE = data.protection.postADayBCE,
       uncrystallisedRights = data.protection.uncrystallisedRights,
       nonUKRights = data.protection.nonUKRights,
       pensionDebits = data.pensionDebits,
-      certificateDate = data.protection.certificateDate,
-      certificateTime = data.protection.certificateTime,
+      pensionDebiitEnteredAmount = data.protection.pensionDebitEnteredAmount,
+      pensionDebitStartDate = data.protection.pensionDebitStartDate,
       protectedAmount = data.protection.protectedAmount,
-      protectionReference = data.protection.protectionReference
+      pensionDebitTotalAmount = data.protection.pensionDebitTotalAmount
     )
     val protections = protectionsStore.get(data.nino)
     val pensionSchemeAdministratorCheckReference = pensionSchemeAdministratorCheckReferenceGen.sample

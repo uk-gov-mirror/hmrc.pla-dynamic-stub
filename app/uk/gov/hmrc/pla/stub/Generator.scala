@@ -116,10 +116,10 @@ object Generator {
       refGen.almostAlways |@|                                              // protectionReference
       Gen.date(2014, 2017).map {
         _.format(ISO_LOCAL_DATE)
-      }.sometimes |@|                                                     // certificateDate
+      }.sample |@|                                                     // certificateDate
       genTime.map {
         _.format(ISO_LOCAL_TIME)
-      }.sometimes |@|                                                    // certificateTime
+      }.sample |@|                                                    // certificateTime
       genMoney |@|                                                       // relevantAmount
       genMoney |@|                                                       // protectedAmount
       genMoney |@|                                                       // preADayPensionInPayment
