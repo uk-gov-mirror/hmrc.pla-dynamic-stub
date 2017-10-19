@@ -30,7 +30,6 @@ object CreateLTAProtectionRequest {
 
   case class ProtectionDetails(
                                 `type`: Int,
-                                status: Int,
                                 relevantAmount: Option[Double] = None,
                                 preADayPensionInPayment: Option[Double] = None,
                                 postADayBCE: Option[Double] = None,

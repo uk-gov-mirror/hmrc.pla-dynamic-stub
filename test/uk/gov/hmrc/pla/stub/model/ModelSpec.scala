@@ -17,13 +17,10 @@
 package uk.gov.hmrc.pla.stub.model
 
 import java.time.LocalDateTime
-import java.util.Random
-import cats.implicits._
-import org.scalacheck._
-import org.scalacheck.support.cats._
-import uk.gov.hmrc.smartstub._
-import play.api.libs.json._
+
 import uk.gov.hmrc.play.test.UnitSpec
+import java.util.Random
+import play.api.libs.json._
 
 object Generator {
   import uk.gov.hmrc.domain.Generator
@@ -32,31 +29,11 @@ object Generator {
   val ninoGenerator = new Generator(rand)
 
   def randomNino: String = ninoGenerator.nextNino.nino.replaceFirst("MA", "AA")
-  def randomProtectionID : Long = rand.nextLong
-
-  /**
-    * "^[0-9]{4}[ABCDEFGHJKLMNPRSTXYZ]$^"
-    **/
-  def refGenForProtectionType(protectionType: String): Gen[String] = {
-
-    val refType = List(
-      pattern"9999".gen,
-      Gen.oneOf("ABCDEFGHJKLMNPRSTXYZ".toList)
-    ).sequence
-
-    refType.map { protectionType +
-      _.mkString
-    }
-  }
-
-  def refGenFP16: Option[String] =  refGenForProtectionType("FP16").seeded(1L)
-  def refGenIP16: Option[String] =  refGenForProtectionType("IP16").seeded(1L)
-  def refGenIP14: Option[String] =  refGenForProtectionType("IP14").seeded(1L)
-  def randomOlderProtectionReference: Option[String] =refGenForProtectionType("A").seeded(1L)
-  /**
-    * "^PSA[0-9]{8}[A-Z]?$^"
-    **/
-  val pensionSchemeAdministratorCheckReferenceGen: Gen[String] = pattern"99999999Z".map("PSA" + _)
+  def randomProtectionID = rand.nextLong
+  def randomFP16ProtectionReference=("FP16" + Math.abs(rand.nextLong)).substring(0,9) + "C"
+  def randomIP16ProtectionReference=("IP16" + Math.abs(rand.nextLong)).substring(0,9) + "B"
+  def randomIP14ProtectionReference=("IP14" + Math.abs(rand.nextLong)).substring(0,9) + "A"
+  def randomOlderProtectionReference=("A" +  Math.abs(rand.nextLong)).substring(0,5) + "A"
 }
 
 object ProtectionTestData {
@@ -73,7 +50,7 @@ object ProtectionTestData {
     status=Protection.extractedStatus(Protection.Status.Open),
     notificationID=Some(22),
     notificationMsg=None,
-    protectionReference=refGenFP16,
+    protectionReference=Some(randomFP16ProtectionReference),
     version = 1,
     certificateDate = Some(currDate),
     certificateTime = Some(currTime))
@@ -85,7 +62,7 @@ object ProtectionTestData {
     status=Protection.extractedStatus(Protection.Status.Open),
     notificationID=Some(22),
     notificationMsg=None,
-    protectionReference=refGenFP16,
+    protectionReference=Some(randomFP16ProtectionReference),
     version = 1,
     pensionDebits=Some(List(PensionDebit(100000.0,"29-8-2016"), PensionDebit(250000.0,"12-03-2017"))),
     certificateDate = Some(currDate),
@@ -98,7 +75,7 @@ object ProtectionTestData {
     status=Protection.extractedStatus(Protection.Status.Open),
     notificationID=Some(12),
     notificationMsg=None,
-    protectionReference=refGenIP16,
+    protectionReference=Some(randomFP16ProtectionReference),
     version = 1,
     certificateDate = Some(currDate),
     certificateTime = Some(currTime))
@@ -110,7 +87,7 @@ object ProtectionTestData {
     status=Protection.extractedStatus(Protection.Status.Open),
     notificationID=None,
     notificationMsg=None,
-    protectionReference=refGenFP16,
+    protectionReference=Some(randomFP16ProtectionReference),
     version = 1,
     certificateDate = Some(currDate),
     certificateTime = Some(currTime))
@@ -122,7 +99,7 @@ object ProtectionTestData {
     status=Protection.extractedStatus(Protection.Status.Open),
     notificationID=None,
     notificationMsg=None,
-    protectionReference=refGenIP14,
+    protectionReference=Some(randomFP16ProtectionReference),
     version = 1,
     certificateDate = Some(currDate),
     certificateTime = Some(currTime))
@@ -134,7 +111,7 @@ object ProtectionTestData {
     status=Protection.extractedStatus(Protection.Status.Open),
     notificationID=None,
     notificationMsg=None,
-    protectionReference=randomOlderProtectionReference,
+    protectionReference=Some(randomOlderProtectionReference),
     version = 1,
     certificateDate = Some(currDate),
     certificateTime = Some(currTime))
@@ -146,7 +123,7 @@ object ProtectionTestData {
     status=Protection.extractedStatus(Protection.Status.Open),
     notificationID=None,
     notificationMsg=None,
-    protectionReference=randomOlderProtectionReference,
+    protectionReference=Some(randomOlderProtectionReference),
     version = 1,
     certificateDate = Some(currDate),
     certificateTime = Some(currTime))
@@ -158,7 +135,7 @@ object ProtectionTestData {
     status=Protection.extractedStatus(Protection.Status.Open),
     notificationID=None,
     notificationMsg=None,
-    protectionReference=randomOlderProtectionReference,
+    protectionReference=Some(randomOlderProtectionReference),
     version = 1,
     certificateDate = Some(currDate),
     certificateTime = Some(currTime))
@@ -170,7 +147,7 @@ object ProtectionTestData {
     status=Protection.extractedStatus(Protection.Status.Dormant),
     notificationID=None,
     notificationMsg=None,
-    protectionReference=randomOlderProtectionReference,
+    protectionReference=Some(randomOlderProtectionReference),
     version = 1,
     certificateDate = Some(currDate),
     certificateTime = Some(currTime))
@@ -182,7 +159,7 @@ object ProtectionTestData {
     status=Protection.extractedStatus(Protection.Status.Dormant),
     notificationID=None,
     notificationMsg=None,
-    protectionReference=randomOlderProtectionReference,
+    protectionReference=Some(randomOlderProtectionReference),
     version = 1,
     certificateDate = Some(currDate),
     certificateTime = Some(currTime))
@@ -194,7 +171,7 @@ object ProtectionTestData {
     status=Protection.extractedStatus(Protection.Status.Withdrawn),
     notificationID=None,
     notificationMsg=None,
-    protectionReference=randomOlderProtectionReference,
+    protectionReference=Some(randomOlderProtectionReference),
     version=1,
     certificateDate = Some(currDate),
     certificateTime = Some(currTime))
@@ -274,10 +251,11 @@ class ProtectionsFormatSpec extends UnitSpec {
 
 object ProtectionApplicationTestData {
 
+  import Generator._
+
   import CreateLTAProtectionRequest.ProtectionDetails
   val Fp2016 = ProtectionDetails(
     `type`=Protection.extractedType(Protection.Type.FP2016),
-    status=Protection.extractedStatus(Protection.Status.Open),
     relevantAmount=Some(1250000),
     preADayPensionInPayment=Some(0),
     postADayBCE=Some(0),
@@ -286,7 +264,6 @@ object ProtectionApplicationTestData {
 
   val Ip2014 = ProtectionDetails(
     `type`=Protection.extractedType(Protection.Type.IP2014),
-    status=Protection.extractedStatus(Protection.Status.Open),
     relevantAmount=Some(1250000),
     preADayPensionInPayment=Some(0),
     postADayBCE=Some(0),
@@ -296,7 +273,6 @@ object ProtectionApplicationTestData {
 
   val Ip2016 = ProtectionDetails(
     `type`=Protection.extractedType(Protection.Type.IP2016),
-    status=Protection.extractedStatus(Protection.Status.Open),
     relevantAmount=Some(1250000),
     preADayPensionInPayment=Some(0),
     postADayBCE=Some(0),
@@ -305,7 +281,6 @@ object ProtectionApplicationTestData {
 
   val Fp2014 = ProtectionDetails(
     `type`=Protection.extractedType(Protection.Type.FP2014),
-    status=Protection.extractedStatus(Protection.Status.Open),
     relevantAmount=Some(1250000),
     preADayPensionInPayment=Some(0),
     postADayBCE=Some(0),
@@ -315,8 +290,8 @@ object ProtectionApplicationTestData {
 
 class ProtectionApplicationMethodsSpec extends UnitSpec {
 
-  import Protection.Type._
   import ProtectionApplicationTestData._
+  import Protection.Type._
 
   "Calling the requestedType method on Fp2016" should {
     "return FP2016" in {

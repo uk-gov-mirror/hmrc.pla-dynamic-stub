@@ -17,9 +17,8 @@
 package uk.gov.hmrc.pla.stub.model
 
 import java.time.LocalDateTime
-
-import play.api.libs.json.{JsPath, JsValue, Json}
-import play.api.libs.json.{Format, Reads, Writes}
+import play.api.libs.json.{Json,JsValue,JsPath}
+import play.api.libs.json.{Reads,Writes,Format}
 import play.api.libs.functional.syntax._
 
 import scala.util.Random
@@ -45,8 +44,7 @@ case class Protection(
     pensionDebitStartDate: Option[Double] = None,
     pensionDebitTotalAmount: Option[Double] = None,
     pensionDebits: Option[List[PensionDebit]] = None,
-    previousVersions: Option[List[Version]] = None,   /* not stored on DB - dynamically generated and added to response */
-    withdrawnDate: Option[String] = None)  {
+    previousVersions: Option[List[String]] = None) /* not stored on DB - dynamically generated and added to response */ {
 
       import Protection.Type._
       def requestedType: Option[Protection.Type.Value] = `type` match {
@@ -76,7 +74,6 @@ object Protection {
 
   object Status extends Enumeration {
     val Unknown, Open,Dormant,Withdrawn,Expired,Unsuccessful,Rejected =Value
-    implicit val statusFormat = EnumUtils.enumFormat(Status)
   }
 
   def extractedStatus(pStatus: Status.Value): Int = {
@@ -92,7 +89,6 @@ object Protection {
 
   object Type extends Enumeration {
     val Primary, Enhanced, Fixed, FP2014, FP2016, IP2014, IP2016 = Value
-    implicit val typeFormat = EnumUtils.enumFormat(Type)
   }
 
   def extractedType(pType: Type.Value): Int = {
@@ -121,5 +117,4 @@ object Protection {
   implicit val localDateTimeFormat = Format(localDateTimeReads, localDateTimeWrites)
 
   implicit lazy val protectionFormat: Format[Protection] = Json.format[Protection]
-
 }
