@@ -37,7 +37,6 @@ object CreateLTAProtectionRequest {
                                 uncrystallisedRights: Option[Double] = None,
                                 nonUKRights: Option[Double] = None,
                                 certificateDate: Option[String] = None,
-                                certificateTime: Option[String] = None,
                                 protectedAmount: Option[Double] = None,
                                 protectionReference: Option[String]=None) {
 

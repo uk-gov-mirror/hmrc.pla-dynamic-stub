@@ -87,7 +87,7 @@ object Generator {
 
   def genProtection(nino: String): Gen[Protection] = {
     for {
-      id <- Gen.choose(1, 7)
+      id <- Gen.choose(1, 5)
       version <- Gen.choose(1, 5)
       protection <- genProtection(nino, id, version)
     } yield protection
@@ -127,7 +127,7 @@ object Generator {
       genMoney |@|                                                       // uncrystallisedRights
       genMoney |@|                                                       // nonUKRights
       genMoney |@|                                                       // pensionDebiitEnteredAmount
-       None |@|                                                          // pensionDebitStartDate
+      genMoney |@|                                                       // pensionDebitStartDate
       genMoney |@|                                                       // pensionDebitTotalAmount
       Gen.listOf(pensionDebitGen).
         sometimes |@|                                                    // pensionDebits
