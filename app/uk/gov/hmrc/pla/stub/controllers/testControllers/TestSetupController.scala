@@ -17,11 +17,12 @@
 package uk.gov.hmrc.pla.stub.controllers.testControllers
 
 import uk.gov.hmrc.play.microservice.controller.BaseController
-import uk.gov.hmrc.pla.stub.repository.{MongoExceptionTriggerRepository, ExceptionTriggerRepository, ProtectionRepository, MongoProtectionRepository}
-import uk.gov.hmrc.pla.stub.model.{Protection, Error, ExceptionTrigger}
-
+import uk.gov.hmrc.pla.stub.repository.{ExceptionTriggerRepository, MongoExceptionTriggerRepository, MongoProtectionRepository, ProtectionRepository}
+import uk.gov.hmrc.pla.stub.model.{Error, ExceptionTrigger, Generator, Protection}
 import play.api.mvc._
 import play.api.libs.json._
+import uk.gov.hmrc.pla.stub.services.PLAProtectionService
+import uk.gov.hmrc.pla.stub.services.PLAProtectionService.protectionsStore
 
 import scala.Error
 import scala.concurrent.Future
@@ -29,25 +30,23 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object TestSetupController extends TestSetupController {
     
-  override val protectionRepository = MongoProtectionRepository()
   override val exceptionTriggerRepository = MongoExceptionTriggerRepository()
 }
 
 trait TestSetupController extends BaseController {
     
-    val protectionRepository: ProtectionRepository
     val exceptionTriggerRepository: ExceptionTriggerRepository
 
   /**
     * Stub-only convenience operation to add a protection to test data
     * @return
     */
-  def insertProtection() = Action.async (BodyParsers.parse.json) { implicit request =>
+  def insertProtection(): Action[JsValue] = Action.async (BodyParsers.parse.json) { implicit request =>
     val protectionJs = request.body.validate[Protection]
     protectionJs.fold(
       errors => Future.successful(BadRequest(Json.toJson(Error(message="body failed validation with errors: " + errors)))),
       protection =>
-        protectionRepository.insert(protection)
+      PLAProtectionService.insertOrUpdateProtection(protection)
           .map { _ => Ok }
           .recover { case exception => Results.InternalServerError(exception.toString) }
     )
@@ -57,8 +56,8 @@ trait TestSetupController extends BaseController {
     * Stub-only convenience operation to tear down test data
     * @return
     */
-  def removeAllProtections() = Action.async { implicit request =>
-    protectionRepository.removeAllProtections()
+  def removeAllProtections(): Action[AnyContent] = Action.async { implicit request =>
+    protectionsStore.clear
     Future.successful(Ok)
   }
 
@@ -68,8 +67,8 @@ trait TestSetupController extends BaseController {
     * @param nino
     * @return
     */
-  def removeProtections(nino: String) = Action.async { implicit request =>
-    protectionRepository.removeByNino(nino: String)
+  def removeProtections(nino: String): Action[AnyContent] = Action.async { implicit request =>
+    protectionsStore.remove(nino)
     Future.successful(Ok)
   }
 
@@ -80,8 +79,8 @@ trait TestSetupController extends BaseController {
     * @param protectionId
     * @return
     */
-  def removeProtection(nino: String, protectionId: Long) = Action.async { implicit request =>
-    protectionRepository.removeByNinoAndProtectionID(nino: String, protectionId)
+  def removeProtection(nino: String, protectionId: Long): Action[AnyContent] = Action.async { implicit request =>
+    PLAProtectionService.removeProtectionByNinoAndProtectionId(nino,protectionId)
     Future.successful(Ok)
   }
 
@@ -90,8 +89,8 @@ trait TestSetupController extends BaseController {
     *
     * @return
     */
-  def dropProtectionsCollection() = Action.async { implicit request =>
-    protectionRepository.removeProtectionsCollection()
+  def dropProtectionsCollection(): Action[AnyContent] = Action.async { implicit request =>
+    protectionsStore.clear
     Future.successful(Ok)
   }
 
@@ -100,7 +99,7 @@ trait TestSetupController extends BaseController {
    * Stub-only convenience operation to remove all exception triggers from the database
    * @return
    */
-  def removeExceptionTriggers() = Action.async { implicit request =>
+  def removeExceptionTriggers(): Action[AnyContent] = Action.async { implicit request =>
     exceptionTriggerRepository.removeAllExceptionTriggers()
     Future.successful(Ok)
   }
@@ -109,7 +108,7 @@ trait TestSetupController extends BaseController {
    * Stub-only convenience operation to add an exception trigger for a particular nino
    * @return
    */
-  def insertExceptionTrigger() = Action.async (BodyParsers.parse.json) { implicit request =>
+  def insertExceptionTrigger(): Action[JsValue] = Action.async (BodyParsers.parse.json) { implicit request =>
     val exceptionTriggerJs = request.body.validate[ExceptionTrigger]
     exceptionTriggerJs.fold(
       errors => Future.successful(BadRequest(Json.toJson(Error(message="body failed validation with errors: " + errors)))),

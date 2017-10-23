@@ -23,7 +23,9 @@ import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, _}
 import uk.gov.hmrc.pla.stub.model._
 import uk.gov.hmrc.pla.stub.notifications.{CertificateStatus, Notifications}
+import uk.gov.hmrc.pla.stub.actions.ExceptionTriggersActions.WithExceptionTriggerCheckAction
 import uk.gov.hmrc.pla.stub.repository.{ExceptionTriggerRepository, MongoExceptionTriggerRepository, MongoProtectionRepository, ProtectionRepository}
+import uk.gov.hmrc.pla.stub.rules._
 import uk.gov.hmrc.pla.stub.services.PLAProtectionService
 import uk.gov.hmrc.play.microservice.controller.BaseController
 import uk.gov.hmrc.smartstub.Enumerable.instances.ninoEnumNoSpaces
@@ -43,14 +45,9 @@ import scala.util.Random
   */
 
 object PLAStubController extends PLAStubController {
-  override val protectionRepository = MongoProtectionRepository()
-  override val exceptionTriggerRepository = MongoExceptionTriggerRepository()
 }
 
 trait PLAStubController  extends BaseController {
-
-  val protectionRepository: ProtectionRepository
-  val exceptionTriggerRepository: ExceptionTriggerRepository
 
   def readProtections(nino: String): Action[AnyContent] = Action { implicit request =>
     val result = PLAProtectionService.retrieveProtections(nino)
@@ -93,14 +90,107 @@ trait PLAStubController  extends BaseController {
     }
   }
 
-  def createProtection(nino:String) : Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[CreateLTAProtectionRequest](data =>
-      Future.successful(Ok(Json.toJson(PLAProtectionService.createLTAProtectionResponse(data)))))
+  def createProtection(nino: String) : Action[JsValue] = WithExceptionTriggerCheckAction(nino).async(BodyParsers.parse.json) { implicit request =>
+
+    val protectionApplicationBodyJs = request.body.validate[CreateLTAProtectionRequest]
+    val headers = request.headers.toSimpleMap
+    val protectionApplicationJs = ControllerHelper.addExtraRequestHeaderChecks(headers, protectionApplicationBodyJs)
+
+
+    protectionApplicationJs.fold(
+      errors => Future.successful(BadRequest(Json.toJson(Error(message = "Request to create protection failed with validation errors: " + errors)))),
+      createProtectionRequest =>
+        createProtectionRequest.protection.requestedType
+          .collect {
+            // gather the relevant rules
+            case Protection.Type.FP2016 => FP2016ApplicationRules
+            case Protection.Type.IP2014 => IP2014ApplicationRules
+            case Protection.Type.IP2016 => IP2016ApplicationRules
+          }
+          .map { appRules: ApplicationRules =>
+            // apply the rules against any existing protections to determine the notification ID, and then process
+            // the application according to that ID
+            //val existingProtectionsFut = protectionRepository.findLatestVersionsOfAllProtectionsByNino(nino)
+            val existingProtections = PLAProtectionService.findAllProtectionsByNino(nino) match
+            { case Some(protections) => protections
+              case _ =>
+                val protection : Protection = Generator.genProtection(createProtectionRequest.nino).sample.get
+                List{protection.copy(`type` = createProtectionRequest.protection.`type`,status = Protection.extractedStatus(Protection.Status.Unsuccessful))}
+            }
+              val notificationId = appRules.check(existingProtections)
+              processApplication(nino, createProtectionRequest, notificationId, existingProtections)
+          }
+          .getOrElse {
+            val error = Error("invalid protection type specified")
+            Future.successful(BadRequest(Json.toJson(error)))
+          }
+    )
   }
 
-  def updateProtection(nino:String,protectionId: Long) : Action[JsValue]  = Action.async(parse.json) { implicit request =>
-    withJsonBody[UpdateLTAProtectionRequest](data =>
-      Future.successful(PLAProtectionService.updateLTAProtection(data,nino,protectionId)))
+
+
+  def updateProtection(nino: String, protectionId: Long) : Action[JsValue] =
+    WithExceptionTriggerCheckAction(nino).async(BodyParsers.parse.json) { implicit request =>
+    System.err.println("Amendment request body ==> " + request.body.toString)
+    val protectionUpdateJs = request.body.validate[UpdateLTAProtectionRequest]
+    protectionUpdateJs.fold(
+      errors => Future.successful(BadRequest(Json.toJson(Error(message = "failed validation with errors: " + errors)))),
+      updateProtectionRequest => {
+        // first cross-check relevant amount against total of the breakdown fields, reject if discrepancy found
+        val calculatedRelevantAmount =
+          updateProtectionRequest.protection.nonUKRights +
+            updateProtectionRequest.protection.postADayBCE +
+            updateProtectionRequest.protection.preADayPensionInPayment +
+            updateProtectionRequest.protection.uncrystallisedRights -
+            updateProtectionRequest.protection.pensionDebitTotalAmount.getOrElse(0.0)
+        if (calculatedRelevantAmount != updateProtectionRequest.protection.relevantAmount) {
+          Future.successful(BadRequest(Json.toJson(
+            Error(message = "The specified Relevant Amount is not the sum of the specified breakdown amounts " +
+              "(non UK Rights + Post A Day BCE + Pre A Day Pensions In Payment + Uncrystallised Rights)"))))
+        }
+
+        val calculatedRelevantAmountMinusPSO = calculatedRelevantAmount - updateProtectionRequest.pensionDebits.map { debits => debits.map(_.pensionDebitEnteredAmount).sum }.getOrElse(0.0)
+        //val amendmentTargetFutureOption = protectionRepository.findLatestVersionOfProtectionByNinoAndId(nino, protectionId)
+        val amendmentTargetOption = PLAProtectionService.findProtectionByNinoAndId(nino, protectionId)
+        amendmentTargetOption match {
+          case None =>
+            Future.successful(NotFound(Json.toJson(Error(message = "protection to amend not found"))))
+          case Some(amendmentTarget) if amendmentTarget.`type` != updateProtectionRequest.protection.`type` =>
+            val error = Error("specified protection type does not match that of the protection to be amended")
+            Future.successful(BadRequest(Json.toJson(error)))
+          case Some(amendmentTarget) if amendmentTarget.version != updateProtectionRequest.protection.version =>
+            val error = Error("specified protection version does not match that of the protection to be amended")
+            Future.successful(BadRequest(Json.toJson(error)))
+          case Some(amendmentTarget) =>
+            val existingProtections = PLAProtectionService.findAllProtectionsByNino(nino) match
+            { case Some(protections) => protections
+              case _ =>
+                val protection : Protection = Generator.genProtection(updateProtectionRequest.nino).sample.get
+                List{protection.copy(`type` = updateProtectionRequest.protection.`type`,
+                  status = Protection.extractedStatus(Protection.Status.Unsuccessful))}
+            }
+              updateProtectionRequest.protection.requestedType
+                .collect {
+                  // gather the rules to be applied
+                  case Protection.Type.IP2014 => IP2014AmendmentRules
+                  case Protection.Type.IP2016 => IP2016AmendmentRules
+                }
+                .map { rules: AmendmentRules =>
+                  // apply the rules against any existing protections to determine the notification ID, and then process
+                  // the requested amendment according to that ID
+                  val notificationId = { if (updateProtectionRequest.protection.withdrawnDate.isEmpty )
+                                        rules.check(calculatedRelevantAmountMinusPSO, existingProtections)
+                  else { rules.check(0.0, existingProtections)} }
+                  processAmendment(nino, amendmentTarget, updateProtectionRequest, notificationId)
+                }
+                .getOrElse {
+                  // no amendment rules matching specified protection type
+                  val error = Error("invalid protection type specified")
+                  Future.successful(BadRequest(Json.toJson(error)))
+                }
+        }
+      }
+    )
   }
 
 
@@ -306,7 +396,8 @@ trait PLAStubController  extends BaseController {
             version = openProtection.version + 1,
             certificateDate = Some(currDate),
             certificateTime = Some(currTime))
-          protectionRepository.insert(nowDormantProtection)
+         // protectionRepository.insert(nowDormantProtection)
+          PLAProtectionService.insertOrUpdateProtection(nowDormantProtection)
         } getOrElse Future.failed(new Exception("No open protection found, but notification ID indicates one should exist"))
       case 3 =>
         val currentlyOpen = existingProtections.find(_.status == Protection.extractedStatus(Protection.Status.Open))
@@ -317,7 +408,8 @@ trait PLAStubController  extends BaseController {
             version = openProtection.version + 1,
             certificateDate = Some(currDate),
             certificateTime = Some(currTime))
-          protectionRepository.insert(nowWithdrawnProtection)
+          //protectionRepository.insert(nowWithdrawnProtection)
+          PLAProtectionService.insertOrUpdateProtection(nowWithdrawnProtection)
         } getOrElse Future.failed(new Exception("No open protection found, but notification ID indicates one should exist"))
       case 8 =>
         val currentlyOpen = existingProtections.find(_.status == Protection.extractedStatus(Protection.Status.Open))
@@ -328,14 +420,16 @@ trait PLAStubController  extends BaseController {
             version = openProtection.version + 1,
             certificateDate = Some(currDate),
             certificateTime = Some(currTime))
-          protectionRepository.insert(nowDormantProtection)
+          //protectionRepository.insert(nowDormantProtection)
+          PLAProtectionService.insertOrUpdateProtection(nowDormantProtection)
         } getOrElse Future.failed(new Exception("No open protection found, but notification ID indicates one should exist"))
       case _ => Future.successful() // no update needed for existing protections
     }
 
     val doUpdateProtections = for {
       _ <- doMaybeUpdateExistingProtection
-      done <- protectionRepository.insert(newProtection)
+      //done <- protectionRepository.insert(newProtection)
+      done <- PLAProtectionService.insertOrUpdateProtection(newProtection)
     } yield done
 
     val response = CreateLTAProtectionResponse(nino = nino, pensionSchemeAdministratorCheckReference = Some(genPSACheckRef(nino)), protection = newProtection.copy(notificationMsg = None))
@@ -379,7 +473,9 @@ trait PLAStubController  extends BaseController {
 
     val notificationEntry = Notifications.table(notificationId)
 
-    val newProtectionOpt = notificationEntry.status match {
+    // Commented the below code to meet the business rules - if the protection is withdrawn then if the dormant protection is present then
+    // it becomes open but won't create a new protection
+    /*val newProtectionOpt = notificationEntry.status match {
       case CertificateStatus.Withdrawn =>
         // the amended protection will be withdrawn
         val protectionReference = amendmentRequest.protection.requestedType collect {
@@ -433,12 +529,14 @@ trait PLAStubController  extends BaseController {
         )
 
       case _ => None
-    }
+    }*/
 
     val amendedProtection = notificationEntry.status match {
 
       case CertificateStatus.Withdrawn =>
-        current.copy(version = current.version + 1, status = Protection.extractedStatus(Protection.Status.Withdrawn))
+        PLAProtectionService.updateDormantProtectionStatusAsOpen(amendmentRequest.nino)
+        current.copy(version = current.version + 1, status = Protection.extractedStatus(Protection.Status.Withdrawn),
+          withdrawnDate = amendmentRequest.protection.withdrawnDate)
 
       case _ =>
         val protectionReference: Option[String] = amendmentRequest.protection.requestedType
@@ -490,19 +588,21 @@ trait PLAStubController  extends BaseController {
           pensionDebits = amendmentRequest.pensionDebits)
     }
 
-    val responseProtection = (newProtectionOpt getOrElse amendedProtection).copy(notificationMsg = None)
+    val responseProtection = amendedProtection.copy(notificationMsg = None)
     val okResponse = UpdateLTAProtectionResponse(nino, Some(genPSACheckRef(nino)), responseProtection)
     val okResponseBody = Json.toJson(okResponse)
     val result = Ok(okResponseBody)
 
-    val doMaybeCreateNewProtectionFut: Future[Any] = newProtectionOpt map { newProtection =>
-      protectionRepository.insert(newProtection)
-    } getOrElse Future.successful(None)
+    /*val doMaybeCreateNewProtectionFut: Future[Any] = newProtectionOpt map { newProtection =>
+      //protectionRepository.insert(newProtection)
+      PLAProtectionService.insertProtection(newProtection)
+    } getOrElse Future.successful(None)*/
 
-    val doAmendProtectionFut = protectionRepository.insert(amendedProtection)
+    //val doAmendProtectionFut = protectionRepository.insert(amendedProtection)
+    val doAmendProtectionFut = PLAProtectionService.insertOrUpdateProtection(amendedProtection)
 
     val updateRepoFut = for {
-      _ <- doMaybeCreateNewProtectionFut
+      //_ <- doMaybeCreateNewProtectionFut
       done <- doAmendProtectionFut
     } yield done
 
@@ -589,6 +689,42 @@ trait PLAStubController  extends BaseController {
   }
 
   }
+
+object ControllerHelper {
+  /*
+ * Checks that the standard extra headers required for NPS requests are present in a request
+ * @param headers a simple map of all request headers
+ * @param the result of validating the request body
+ * @rreturn the overall validation result, of non-success then will include both body and  header validation errors
+ */
+  def addExtraRequestHeaderChecks[T](headers: Map[String, String], bodyValidationResultJs: JsResult[T]): JsResult[T] = {
+    val environment = headers.get("Environment")
+    val token = headers.get("Authorization")
+    val notSet = "<NOT SET>"
+    play.Logger.info("Request headers: environment =" + environment.getOrElse(notSet) + ", authorisation=" + token.getOrElse(notSet))
+
+    //  Ensure any header validation errors are accumulated with any body validation errors into a single JsError
+    //  (the below code is not so nice, could be a good use case for scalaz validation)
+    val noAuthHeaderErr = JsError("required header 'Authorisation' not set in NPS request")
+    val noEnvHeaderErr = JsError("required header 'Environment' not set in NPS request")
+
+    // 1. accumlate any header errors
+    def headerNotPresentErrors: Option[JsError] = (environment, token) match {
+      case (Some(_), Some(_)) => None
+      case (Some(_), None) => Some(noAuthHeaderErr)
+      case (None, Some(_)) => Some(noEnvHeaderErr)
+      case (None, None) => Some(noAuthHeaderErr ++ noEnvHeaderErr)
+    }
+
+    // 2. accumulate any header + any body errors
+    (bodyValidationResultJs, headerNotPresentErrors) match {
+      case (e1: JsError, e2: Some[JsError]) => e1 ++ e2.get
+      case (e1: JsError, _) => e1
+      case (_, e2: Some[JsError]) => e2.get
+      case _ => bodyValidationResultJs // success case
+    }
+  }
+}
 
 
 
