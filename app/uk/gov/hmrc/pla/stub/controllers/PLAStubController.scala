@@ -396,7 +396,6 @@ trait PLAStubController  extends BaseController {
             version = openProtection.version + 1,
             certificateDate = Some(currDate),
             certificateTime = Some(currTime))
-         // protectionRepository.insert(nowDormantProtection)
           PLAProtectionService.insertOrUpdateProtection(nowDormantProtection)
         } getOrElse Future.failed(new Exception("No open protection found, but notification ID indicates one should exist"))
       case 3 =>
@@ -408,7 +407,6 @@ trait PLAStubController  extends BaseController {
             version = openProtection.version + 1,
             certificateDate = Some(currDate),
             certificateTime = Some(currTime))
-          //protectionRepository.insert(nowWithdrawnProtection)
           PLAProtectionService.insertOrUpdateProtection(nowWithdrawnProtection)
         } getOrElse Future.failed(new Exception("No open protection found, but notification ID indicates one should exist"))
       case 8 =>
@@ -420,7 +418,6 @@ trait PLAStubController  extends BaseController {
             version = openProtection.version + 1,
             certificateDate = Some(currDate),
             certificateTime = Some(currTime))
-          //protectionRepository.insert(nowDormantProtection)
           PLAProtectionService.insertOrUpdateProtection(nowDormantProtection)
         } getOrElse Future.failed(new Exception("No open protection found, but notification ID indicates one should exist"))
       case _ => Future.successful() // no update needed for existing protections
@@ -428,7 +425,6 @@ trait PLAStubController  extends BaseController {
 
     val doUpdateProtections = for {
       _ <- doMaybeUpdateExistingProtection
-      //done <- protectionRepository.insert(newProtection)
       done <- PLAProtectionService.insertOrUpdateProtection(newProtection)
     } yield done
 
@@ -472,64 +468,6 @@ trait PLAStubController  extends BaseController {
                                notificationId: Short): Future[Result] = {
 
     val notificationEntry = Notifications.table(notificationId)
-
-    // Commented the below code to meet the business rules - if the protection is withdrawn then if the dormant protection is present then
-    // it becomes open but won't create a new protection
-    /*val newProtectionOpt = notificationEntry.status match {
-      case CertificateStatus.Withdrawn =>
-        // the amended protection will be withdrawn
-        val protectionReference = amendmentRequest.protection.requestedType collect {
-          case Protection.Type.IP2014 => ("IP14" + Math.abs(Random.nextLong)).substring(0, 9) + "A"
-          case Protection.Type.IP2016 => ("IP16" + Math.abs(Random.nextLong)).substring(0, 9) + "B"
-        }
-        val notificationMessage =
-          injectMessageParameters(
-            notificationEntry.message,
-            current.`type`,
-            Some(amendmentRequest.protection.relevantAmount),
-            protectionReference,
-            genPSACheckRef(nino))
-
-        // TODO
-        // this doesn't actually reflect the business rules - in some 'withdrawn' cases we don't create a new
-        // protection as below. Instead a dormant one can become open, and we simply update the amendee status to
-        // withdrawn
-        val currDate = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
-        val currTime = LocalDateTime.now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_TIME)
-
-        val amendmentPsoAmt = amendmentRequest.pensionDebits.map { debits => debits.map(_.pensionDebitEnteredAmount).sum }.getOrElse(0.0)
-        val updatedPensionDebitTotalAmount = amendmentRequest.protection.pensionDebitTotalAmount.getOrElse(0.0) + amendmentPsoAmt
-        val relevantAmountMinusPSO = amendmentRequest.protection.relevantAmount - amendmentPsoAmt
-
-        import Protection.Type._
-        val maxProtectedAmount = amendmentRequest.protection.requestedType match {
-          case Some(IP2014) => 1500000.00
-          case Some(IP2016) => 1250000.00
-        }
-
-        Some(Protection(
-          nino = nino,
-          version = 1,
-          id = Random.nextLong(),
-          `type` = amendmentRequest.protection.`type`, // should be unchanged
-          protectionReference = protectionReference,
-          status = Notifications.extractedStatus(notificationEntry.status),
-          notificationID = Some(notificationId),
-          notificationMsg = Some(notificationMessage),
-          certificateDate = Some(currDate),
-          certificateTime = Some(currTime),
-          relevantAmount = Some(relevantAmountMinusPSO),
-          protectedAmount = Some(relevantAmountMinusPSO.min(maxProtectedAmount)),
-          preADayPensionInPayment = Some(amendmentRequest.protection.preADayPensionInPayment),
-          postADayBCE = Some(amendmentRequest.protection.postADayBCE),
-          uncrystallisedRights = Some(amendmentRequest.protection.uncrystallisedRights),
-          nonUKRights = Some(amendmentRequest.protection.nonUKRights),
-          pensionDebitTotalAmount = Some(updatedPensionDebitTotalAmount),
-          pensionDebits = amendmentRequest.pensionDebits)
-        )
-
-      case _ => None
-    }*/
 
     val amendedProtection = notificationEntry.status match {
 
@@ -593,16 +531,10 @@ trait PLAStubController  extends BaseController {
     val okResponseBody = Json.toJson(okResponse)
     val result = Ok(okResponseBody)
 
-    /*val doMaybeCreateNewProtectionFut: Future[Any] = newProtectionOpt map { newProtection =>
-      //protectionRepository.insert(newProtection)
-      PLAProtectionService.insertProtection(newProtection)
-    } getOrElse Future.successful(None)*/
 
-    //val doAmendProtectionFut = protectionRepository.insert(amendedProtection)
     val doAmendProtectionFut = PLAProtectionService.insertOrUpdateProtection(amendedProtection)
 
     val updateRepoFut = for {
-      //_ <- doMaybeCreateNewProtectionFut
       done <- doAmendProtectionFut
     } yield done
 
