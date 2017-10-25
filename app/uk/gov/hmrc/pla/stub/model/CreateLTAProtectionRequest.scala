@@ -38,7 +38,7 @@ object CreateLTAProtectionRequest {
                                 nonUKRights: Option[Double] = None,
                                 certificateDate: Option[String] = None,
                                 protectedAmount: Option[Double] = None,
-                                protectionReference: Option[String]) {
+                                protectionReference: Option[String]=None) {
 
     import uk.gov.hmrc.pla.stub.model.Protection.Type._
 
