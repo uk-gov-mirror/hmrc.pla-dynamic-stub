@@ -16,12 +16,19 @@
 
 package uk.gov.hmrc.pla.stub.controllers
 
+import org.mockito.Mockito.when
+import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.libs.json._
+import play.api.mvc.Action
+import play.api.mvc.BodyParsers._
+import play.api.mvc.Results.Ok
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.pla.stub.model._
 import uk.gov.hmrc.play.test.UnitSpec
+
+import scala.concurrent.Future
 
 object TestData {
   val validFP2016CeateRequest = CreateLTAProtectionRequest(
@@ -39,63 +46,90 @@ object TestData {
 
   val validResponse = "\"pensionSchemeAdministratorCheckReference\":\"PSA12345678A\",\"ltaType\":5,\"psaCheckResult\":1,\"protectedAmount\":25000"
   val notFoundResponse = "\"reason\":\"Resource not found\""
+  val notFoundProtectionsForNinoResponse = "\"no protections found for nino\""
 }
 
-class PLAStubControllerSpec extends UnitSpec with OneAppPerSuite {
-  "The validation results for a valid CreateProtectionRequest and valid headers should be a success" should {
-    "return a valid request object" in {
-      val requestJs = ControllerHelper.addExtraRequestHeaderChecks(TestData.validHeadersExample, JsSuccess(TestData.validFP2016CeateRequest))
-      requestJs.isSuccess shouldBe true
-      val request = requestJs.get
-      request shouldEqual TestData.validFP2016CeateRequest
+//extends UnitSpec  with PlaySpec with OneAppPerSuite with MockitoSugar
+
+class PLAStubControllerSpec extends UnitSpec with OneAppPerSuite with MockitoSugar{
+
+  val mockController: PLAStubController = mock[PLAStubController]
+
+  "Read Protections" should {
+    "return Status: OK Body: Protections for given nino on retrieval protections request" in {
+
+      val nino = "RC966967C"
+      val protections = Json.fromJson[Protections](successfulProtectionsRetrieveOutput)
+      when(mockController.readProtections(nino)).thenReturn(Action {
+        Ok(Json.toJson(protections.get))
+      })
+
+      val response = mockController.readProtections(nino).apply(FakeRequest("GET", s"/individual/$nino/protections/"))
+      status(response) shouldBe OK
+      contentAsJson(response).shouldBe(successfulProtectionsRetrieveOutput)
+
+    }
+  }
+  "Read Protection" should {
+    "return Status: OK Body: Protection for given nino and protection id on retrieval protection request" in {
+      val nino = "RC966967C"
+      val protectionId=1
+      val protection = Json.fromJson[Protection](successfulProtectionRetrieveOutput)
+      when(mockController.readProtection(nino, protectionId)).thenReturn(Action {
+        Ok(Json.toJson(protection.get))
+      })
+
+      val response = mockController.readProtection(nino, 1).apply(FakeRequest("GET", s"/individual/$nino/protections/$protectionId"))
+      status(response) shouldBe OK
+      contentAsJson(response).shouldBe(successfulProtectionRetrieveOutput)
+
     }
   }
 
-  "The validation results for an invalid CreateProtectionRequest and valid headers" should {
-    "return a failure with one error" in {
-      val requestJs = ControllerHelper.addExtraRequestHeaderChecks(TestData.validHeadersExample, TestData.invalidRequestJsError)
-      requestJs.isSuccess shouldBe false
-      requestJs.asInstanceOf[JsError].errors.seq.size shouldBe 1
-      requestJs.asInstanceOf[JsError].errors.seq.head._2.size shouldBe 1
+  "Read Protection Version" should {
+    "return Status: OK Body: Protection for given nino , protection id and version on retrieval protection request" in {
+      val nino = "RC966967C"
+      val protectionId=1
+      val versionId=1
+      val protection = Json.fromJson[Protection](successfulProtectionRetrieveOutput)
+      when(mockController.readProtectionVersion(nino, protectionId,versionId)).thenReturn(Action {
+        Ok(Json.toJson(protection.get))
+      })
+      val response = mockController.readProtectionVersion(nino, protectionId,versionId)
+        .apply(FakeRequest("GET", s"/individual/$nino/protections/$protectionId/version/$versionId"))
+      status(response) shouldBe OK
+      contentAsJson(response).shouldBe(successfulProtectionRetrieveOutput)
+
+    }
+  }
+  "Create Protection" should {
+    "return Status: OK Body: CreateLTAProtectionResponse for successful valid CreateLTAProtectionRequest with all optional data" in {
+      val nino = "RC966967C"
+      when(mockController.createProtection(nino)).thenReturn(Action.async(parse.json) {
+        _ =>
+          Future.successful(Ok(validCreateProtectionResponseOutput))
+      })
+      val response = mockController.createProtection(nino).apply(FakeRequest("POST", s"/individual/$nino/protection/")
+        .withBody(validCreateProtectionRequestInput))
+      status(response) shouldBe OK
+      contentAsJson(response).shouldBe(validCreateProtectionResponseOutput)
+
     }
   }
 
-  "The validation results for a valid CreateProtectionRequest and missing Environment header" should {
-    "return a failure with one error" in {
-      val requestJs = ControllerHelper.addExtraRequestHeaderChecks(TestData.noEnvHeadersExample, JsSuccess(TestData.validFP2016CeateRequest))
-      requestJs.isSuccess shouldBe false
-      requestJs.asInstanceOf[JsError].errors.seq.size shouldBe 1
-      requestJs.asInstanceOf[JsError].errors.seq.head._2.size shouldBe 1
-    }
-  }
+  "Update Protection" should {
+    "return Status: OK Body: UpdateLTAProtectionResponse for successful valid UpdateLTAProtectionRequest with all optional data" in {
+      val nino = "RC966967C"
+      val protectionId=5
+      when(mockController.updateProtection(nino,protectionId)).thenReturn(Action.async(parse.json) {
+        _ =>
+          Future.successful(Ok(validUpdateProtectionResponseOutput))
+      })
+      val response = mockController.updateProtection(nino,protectionId).apply(FakeRequest("POST", s"/individual/$nino/protections/$protectionId")
+        .withBody(validUpdateProtectionRequestInput))
+      status(response) shouldBe OK
+      contentAsJson(response).shouldBe(validUpdateProtectionResponseOutput)
 
-  "The validation results for a valid CreateProtectionRequest and missing Authorization header" should {
-    "return a failure with one error" in {
-      val requestJs = ControllerHelper.addExtraRequestHeaderChecks(TestData.noAuthHeadersExample, JsSuccess(TestData.validFP2016CeateRequest))
-      requestJs.isSuccess shouldBe false
-      requestJs.asInstanceOf[JsError].errors.seq.size shouldBe 1
-      requestJs.asInstanceOf[JsError].errors.seq.head._2.size shouldBe 1
-    }
-  }
-
-
-  "The validation results for a valid CreateProtectionRequest and missing Authorization and Environment headers" should {
-    "return a failure with two validation errosr" in {
-      val requestJs = ControllerHelper.addExtraRequestHeaderChecks(TestData.emptyHeadersExample, JsSuccess(TestData.validFP2016CeateRequest))
-      requestJs.isSuccess shouldBe false
-      println("RESULT ==> " + requestJs)
-      requestJs.asInstanceOf[JsError].errors.seq.size shouldBe 1
-      requestJs.asInstanceOf[JsError].errors.seq.head._2.size shouldBe 2
-    }
-  }
-
-  "The validation results for an invalid CreateProtectionRequest and missing Authorization and Environment headers" should {
-    "return a failure with three validation errors" in {
-      val requestJs = ControllerHelper.addExtraRequestHeaderChecks(TestData.emptyHeadersExample, TestData.invalidRequestJsError)
-      requestJs.isSuccess shouldBe false
-      println("RESULT ==> " + requestJs)
-      requestJs.asInstanceOf[JsError].errors.seq.size shouldBe 1
-      requestJs.asInstanceOf[JsError].errors.seq.head._2.size shouldBe 3
     }
   }
 

@@ -18,17 +18,34 @@ package uk.gov.hmrc.pla.stub.model
 
 import play.api.libs.json._
 
+case class Version(
+                    version: Int,
+                    link: String,
+                    protection: Protection)
 
-/**
-  * Details of all protections for an individual, including a check reference for the PSA
-  */
-case class Protections(
-    nino: String,
-    pensionSchemeAdministratorCheckReference: Option[String] = None,
-    protections: List[Protection])
-
-object Protections {
-  implicit val protectionsFormat = Json.format[Protections]
+object Version {
 
 
+  /**
+    * This is a bit hacky but can't find a better way
+    */
+  implicit object VersionFormat extends Format[Version] {
+    override def writes(o: Version): JsValue = {
+      Json.obj("version" -> o.version,
+        "link" -> o.link)
+    }
+
+   override def reads(json: JsValue): JsResult[Version] =
+     JsSuccess(Version(-1, "foo", dummyProtection))
+  }
+
+  val dummyProtection = new Protection("nino",
+    1L,
+    1,
+    1,
+    1,
+    None,
+    None,
+    None)
 }
+
