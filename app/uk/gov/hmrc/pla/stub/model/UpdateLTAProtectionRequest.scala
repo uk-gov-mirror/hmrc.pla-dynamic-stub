@@ -38,7 +38,8 @@ object UpdateLTAProtectionRequest {
     postADayBCE: Double,
     uncrystallisedRights: Double,
     pensionDebitTotalAmount: Option[Double] = None,
-    nonUKRights: Double) {
+    nonUKRights: Double,
+    withdrawnDate: Option[String] = None) {
 
     import uk.gov.hmrc.pla.stub.model.Protection.Type._
 
