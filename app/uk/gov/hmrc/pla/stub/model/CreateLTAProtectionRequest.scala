@@ -30,16 +30,16 @@ object CreateLTAProtectionRequest {
 
   case class ProtectionDetails(
                                 `type`: Int,
-                                status: Int,
                                 relevantAmount: Option[Double] = None,
                                 preADayPensionInPayment: Option[Double] = None,
                                 postADayBCE: Option[Double] = None,
                                 uncrystallisedRights: Option[Double] = None,
                                 nonUKRights: Option[Double] = None,
-                                certificateDate: Option[String] = None,
-                                certificateTime: Option[String] = None,
-                                protectedAmount: Option[Double] = None,
-                                protectionReference: Option[String]=None) {
+                                pensionDebitAmount: Option[Double] = None,
+                                pensionDebitEnteredAmount: Option[Double] = None,
+                                pensionDebitStartDate: Option[String] = None,
+                                pensionDebitTotalAmount: Option[Double]=None,
+                                protectedAmount: Option[Double] = None) {
 
     import uk.gov.hmrc.pla.stub.model.Protection.Type._
 

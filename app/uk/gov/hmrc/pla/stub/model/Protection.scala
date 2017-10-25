@@ -42,7 +42,7 @@ case class Protection(
     uncrystallisedRights: Option[Double] = None,
     nonUKRights: Option[Double] = None,
     pensionDebiitEnteredAmount: Option[Double] = None,
-    pensionDebitStartDate: Option[Double] = None,
+    pensionDebitStartDate: Option[String] = None,
     pensionDebitTotalAmount: Option[Double] = None,
     pensionDebits: Option[List[PensionDebit]] = None,
     previousVersions: Option[List[Version]] = None,   /* not stored on DB - dynamically generated and added to response */

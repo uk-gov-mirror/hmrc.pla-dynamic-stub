@@ -30,70 +30,6 @@ import scala.concurrent.Future
 object PLAProtectionService {
 
   lazy val protectionsStore = Generator.protectionsStore.empty
-  def createLTAProtectionResponse(data: CreateLTAProtectionRequest): CreateLTAProtectionResponse = {
-    val protection : Protection = Generator.genProtection(data.nino).sample.get
-    val newLTAProtection = protection.copy(
-      `type` = data.protection.`type`,
-      status = data.protection.status,
-      relevantAmount = data.protection.relevantAmount,
-      preADayPensionInPayment = data.protection.preADayPensionInPayment,
-      postADayBCE = data.protection.postADayBCE,
-      uncrystallisedRights = data.protection.uncrystallisedRights,
-      nonUKRights = data.protection.nonUKRights,
-      pensionDebits = data.pensionDebits,
-      certificateDate = data.protection.certificateDate,
-      certificateTime = data.protection.certificateTime,
-      protectedAmount = data.protection.protectedAmount,
-      protectionReference = data.protection.protectionReference
-    )
-    val protections = protectionsStore.get(data.nino)
-    val pensionSchemeAdministratorCheckReference = pensionSchemeAdministratorCheckReferenceGen.sample
-    val ltaProtections : List[Protection] = protections match {
-      case Some(protections) =>   newLTAProtection :: protections.protections
-      case None =>  List(newLTAProtection)
-    }
-    protectionsStore(data.nino) = Protections(data.nino,pensionSchemeAdministratorCheckReference,ltaProtections)
-    CreateLTAProtectionResponse(nino = data.nino,
-      pensionSchemeAdministratorCheckReference = pensionSchemeAdministratorCheckReference,
-      protection = newLTAProtection)
-  }
-
-  def updateLTAProtection(data: UpdateLTAProtectionRequest,nino:String,protectionId: Long) : Result = {
-    if (!data.protection.withdrawnDate.isEmpty && data.protection.status != 3) {
-      val errorMsg = "The status of a Protection must be set to WITHDRAWN when the Withdrawn Date is provided"
-      Logger.error(errorMsg)
-      BadRequest(Json.toJson(Error(errorMsg)))
-    } else {
-      val protections: Option[Protections] = PLAProtectionService.retrieveProtections(nino)
-      val existingProtection: Option[Protection] = protections.get.protections.find(p => p.id == protectionId)
-      existingProtection match {
-        case Some(existingProtection) => Ok(Json.toJson(updateLTAProtectionResponse(existingProtection, data, protectionId)))
-        case None => NotFound(Json.toJson(Error("Protection to update not found")))
-      }
-    }
-  }
-
-  def updateLTAProtectionResponse(protection: Protection,data: UpdateLTAProtectionRequest,protectionId: Long) : UpdateLTAProtectionResponse = {
-
-    val updatedLTAProtection = protection.copy(
-      `type` = data.protection.`type`,
-      status = data.protection.status,
-      relevantAmount = Some(data.protection.relevantAmount),
-      preADayPensionInPayment = Some(data.protection.preADayPensionInPayment),
-      postADayBCE = Some(data.protection.postADayBCE),
-      uncrystallisedRights = Some(data.protection.uncrystallisedRights),
-      nonUKRights = Some(data.protection.nonUKRights),
-      pensionDebits = data.pensionDebits,
-      withdrawnDate = data.protection.withdrawnDate
-    )
-    updateDormantProtectionStatusAsOpen(data.nino)
-    val protections: Protections = PLAProtectionService.retrieveProtections(data.nino).get
-    val ltaProtections : List[Protection] = updatedLTAProtection :: protections.protections.filter(_.id != protectionId)
-    protectionsStore(data.nino) = protections.copy(protections=ltaProtections)
-    UpdateLTAProtectionResponse(nino = data.nino,
-      pensionSchemeAdministratorCheckReference = pensionSchemeAdministratorCheckReferenceGen.sample,
-      protection = updatedLTAProtection)
-  }
 
   def updateDormantProtectionStatusAsOpen(nino:String) : Unit= {
     val protections: Protections = PLAProtectionService.retrieveProtections(nino).get
@@ -108,6 +44,40 @@ object PLAProtectionService {
 
   def retrieveProtections(nino: String): Option[Protections] = {
     protectionsStore.get(nino)
+  }
+
+  def insertOrUpdateProtection(protection : Protection) : Future[Result] = {
+    val protections = protectionsStore.get(protection.nino)
+    val pensionSchemeAdministratorCheckReference = pensionSchemeAdministratorCheckReferenceGen.sample
+    val ltaProtections : List[Protection] = protections match {
+      case Some(protections) =>   protection :: protections.protections.filter(_.id != protection.id)
+      case None =>  List(protection)
+    }
+    protectionsStore(protection.nino) = Protections(protection.nino,pensionSchemeAdministratorCheckReference,ltaProtections)
+    Future.successful(Ok)
+  }
+
+  def removeProtectionByNinoAndProtectionId(nino: String,protectionId : Long) : Future[Result] = {
+    val protections: Protections = PLAProtectionService.retrieveProtections(nino).get
+    protections.protections.find(_.id == protectionId) match {
+      case Some(_) => {
+        val ltaProtections : List[Protection] = protections.protections.filter(_.id != protectionId)
+        protectionsStore(nino) = protections.copy(protections = ltaProtections)
+        Future.successful(Ok)
+      }
+      case None => Future.successful(NotFound)
+    }
+  }
+
+  def findAllProtectionsByNino(nino: String): Option[List[Protection]] = {
+    PLAProtectionService.retrieveProtections(nino) match {
+      case Some(protections) => Some(protections.protections)
+      case _ => None}
+  }
+
+  def findProtectionByNinoAndId(nino:String, protectionId: Long): Option[Protection] = {
+    val protections: Option[Protections] = PLAProtectionService.retrieveProtections(nino)
+    protections.get.protections.find(p => p.id == protectionId)
   }
 
 }
