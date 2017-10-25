@@ -39,7 +39,10 @@ object PLAProtectionService {
       postADayBCE = data.protection.postADayBCE,
       uncrystallisedRights = data.protection.uncrystallisedRights,
       nonUKRights = data.protection.nonUKRights,
-      pensionDebits = data.pensionDebits
+      pensionDebits = data.pensionDebits,
+      certificateDate = data.protection.certificateDate,
+      protectedAmount = data.protection.protectedAmount,
+      protectionReference = data.protection.protectionReference
     )
     val protections = protectionsStore.get(data.nino)
     val pensionSchemeAdministratorCheckReference = pensionSchemeAdministratorCheckReferenceGen.sometimes.sample.get
