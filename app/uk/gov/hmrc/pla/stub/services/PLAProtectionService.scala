@@ -21,6 +21,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.mvc.Results.{BadRequest, NotFound, Ok}
 import uk.gov.hmrc.pla.stub.model.Generator.pensionSchemeAdministratorCheckReferenceGen
+import uk.gov.hmrc.smartstub.Enumerable.instances.ninoEnumNoSpaces
 import uk.gov.hmrc.pla.stub.model.{Generator, _}
 import uk.gov.hmrc.smartstub._
 
@@ -41,11 +42,12 @@ object PLAProtectionService {
       nonUKRights = data.protection.nonUKRights,
       pensionDebits = data.pensionDebits,
       certificateDate = data.protection.certificateDate,
+      certificateTime = data.protection.certificateTime,
       protectedAmount = data.protection.protectedAmount,
       protectionReference = data.protection.protectionReference
     )
     val protections = protectionsStore.get(data.nino)
-    val pensionSchemeAdministratorCheckReference = pensionSchemeAdministratorCheckReferenceGen.sometimes.sample.get
+    val pensionSchemeAdministratorCheckReference = pensionSchemeAdministratorCheckReferenceGen.sample
     val ltaProtections : List[Protection] = protections match {
       case Some(protections) =>   newLTAProtection :: protections.protections
       case None =>  List(newLTAProtection)
@@ -89,7 +91,7 @@ object PLAProtectionService {
     val ltaProtections : List[Protection] = updatedLTAProtection :: protections.protections.filter(_.id != protectionId)
     protectionsStore(data.nino) = protections.copy(protections=ltaProtections)
     UpdateLTAProtectionResponse(nino = data.nino,
-      pensionSchemeAdministratorCheckReference = pensionSchemeAdministratorCheckReferenceGen.sometimes.sample.get,
+      pensionSchemeAdministratorCheckReference = pensionSchemeAdministratorCheckReferenceGen.sample,
       protection = updatedLTAProtection)
   }
 
