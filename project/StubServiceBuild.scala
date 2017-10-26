@@ -17,11 +17,8 @@ private object AppDependencies {
   import play.core.PlayVersion
 
 
-  private val microserviceBootstrapVersion = "5.13.0"
-  private val playHealthVersion = "2.1.0"
-  private val playConfigVersion = "4.2.0"
-  private val hmrcTestVersion = "2.3.0"
-  private val logbackJsonLoggerVersion = "3.1.0"
+  private val microserviceBootstrapVersion = "6.10.0"
+  private val hmrcTestVersion = "3.0.0"
   private val playReactiveMongoVersion = "5.2.0"
   private val pegdownVersion = "1.6.0"
   private val scalaTestVersion = "2.2.6"
@@ -29,9 +26,6 @@ private object AppDependencies {
   val compile = Seq(
     ws,
     "uk.gov.hmrc" %% "microservice-bootstrap" % microserviceBootstrapVersion,
-    "uk.gov.hmrc" %% "play-health" % playHealthVersion,
-    "uk.gov.hmrc" %% "play-config" % playConfigVersion,
-    "uk.gov.hmrc" %% "logback-json-logger" % logbackJsonLoggerVersion,
     "uk.gov.hmrc" %% "play-reactivemongo" % playReactiveMongoVersion,
     "uk.gov.hmrc" %% "stub-data-generator" % "0.4.0",
     "org.scalacheck" %% "scalacheck" % "1.13.5",
@@ -51,7 +45,7 @@ private object AppDependencies {
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
         "org.mockito" % "mockito-core" % "2.7.22" % scope,
-        "uk.gov.hmrc" %% "domain" % "3.7.0",
+        "uk.gov.hmrc" %% "domain" % "5.0.0",
         "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope
       )
     }.test

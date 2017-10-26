@@ -21,9 +21,10 @@ import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.pla.stub.model.ExceptionTrigger
 import uk.gov.hmrc.pla.stub.repository.{ExceptionTriggerRepository, MongoExceptionTriggerRepository}
-import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.HeaderCarrierConverter
 
 object ExceptionTriggersActions extends ExceptionTriggersActions {
 
@@ -58,7 +59,7 @@ trait ExceptionTriggersActions  {
   case class WithExceptionTriggerCheckAction(nino: String)(implicit ec: ExecutionContext) extends ActionBuilder[Request] {
 
     def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]) = {
-      implicit val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
 
       exceptionTriggerRepository.findExceptionTriggerByNino(nino).flatMap {
         case Some(trigger) => processExceptionTrigger(trigger)
