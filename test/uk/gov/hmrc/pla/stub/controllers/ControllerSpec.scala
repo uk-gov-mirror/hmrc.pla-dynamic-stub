@@ -17,8 +17,7 @@
 package uk.gov.hmrc.pla.stub.controllers
 
 import org.mockito.Mockito.when
-import org.scalatest.mock.MockitoSugar
-import org.scalatestplus.play.OneAppPerSuite
+import org.scalatest.mockito.MockitoSugar
 import play.api.libs.json._
 import play.api.mvc.Action
 import play.api.mvc.BodyParsers._
@@ -49,9 +48,7 @@ object TestData {
   val notFoundProtectionsForNinoResponse = "\"no protections found for nino\""
 }
 
-//extends UnitSpec  with PlaySpec with OneAppPerSuite with MockitoSugar
-
-class PLAStubControllerSpec extends UnitSpec with OneAppPerSuite with MockitoSugar{
+class PLAStubControllerSpec extends UnitSpec with MockitoSugar{
 
   val mockController: PLAStubController = mock[PLAStubController]
 
