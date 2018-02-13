@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,6 +88,44 @@ package object controllers {
       |                    "pensionDebitStartDate": "2015-05-23"
       |                }
       |            ]
+      |        }
+      |    ]
+      |}
+    """.stripMargin
+
+  )
+
+  val successfulEmptyProtectionsRetrieveOutput : JsValue = Json.parse(
+    """
+      |{
+      |    "nino": "RC966967C",
+      |    "id": 'null',
+      |    "version": 'null',
+      |    "type": 'null',
+      |    "status": 'null',
+      |    "notificationID": 'null',
+      |    "notificationMsg": 'null',
+      |    "protectionReference": "stubPSACheckRef",
+      |    "certificateDate": 'null',
+      |    "certificateTime": 'null',
+      |    "relevantAmount": 'null',
+      |    "protectedAmount": 'null',
+      |    "preADayPensionInPayment": 'null',
+      |    "postADayBCE": 'null',
+      |    "uncrystallisedRights": 'null',
+      |    "nonUKRights": 'null',
+      |    "pensionDebits": [
+      |        {
+      |            "pensionDebitEnteredAmount": 'null',
+      |            "pensionDebitStartDate": 'null'
+      |        },
+      |        {
+      |            "pensionDebitEnteredAmount": 'null',
+      |            "pensionDebitStartDate": 'null'
+      |        },
+      |        {
+      |            "pensionDebitEnteredAmount": 'null',
+      |            "pensionDebitStartDate": 'null'
       |        }
       |    ]
       |}
