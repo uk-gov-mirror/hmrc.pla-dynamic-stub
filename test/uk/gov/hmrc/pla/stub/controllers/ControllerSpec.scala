@@ -68,7 +68,7 @@ class PLAStubControllerSpec extends UnitSpec with MockitoSugar{
     }
 
     "return Status: OK Body: List of Empty Protections on retrieval of empty list" in {
-      val nino = "RC966967C"
+      val nino = "AA000000A"
       val protections = Json.fromJson[Protections](successfulEmptyProtectionsRetrieveOutput)
       when(mockController.readProtections(nino)).thenReturn(Action {
         Ok(Json.toJson(protections.get))

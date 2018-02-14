@@ -98,36 +98,8 @@ package object controllers {
   val successfulEmptyProtectionsRetrieveOutput : JsValue = Json.parse(
     """
       |{
-      |    "nino": "RC966967C",
-      |    "id": 'null',
-      |    "version": 'null',
-      |    "type": 'null',
-      |    "status": 'null',
-      |    "notificationID": 'null',
-      |    "notificationMsg": 'null',
-      |    "protectionReference": "stubPSACheckRef",
-      |    "certificateDate": 'null',
-      |    "certificateTime": 'null',
-      |    "relevantAmount": 'null',
-      |    "protectedAmount": 'null',
-      |    "preADayPensionInPayment": 'null',
-      |    "postADayBCE": 'null',
-      |    "uncrystallisedRights": 'null',
-      |    "nonUKRights": 'null',
-      |    "pensionDebits": [
-      |        {
-      |            "pensionDebitEnteredAmount": 'null',
-      |            "pensionDebitStartDate": 'null'
-      |        },
-      |        {
-      |            "pensionDebitEnteredAmount": 'null',
-      |            "pensionDebitStartDate": 'null'
-      |        },
-      |        {
-      |            "pensionDebitEnteredAmount": 'null',
-      |            "pensionDebitStartDate": 'null'
-      |        }
-      |    ]
+      |    "nino": "AA000000A",
+      |    "protections":[]
       |}
     """.stripMargin
 
