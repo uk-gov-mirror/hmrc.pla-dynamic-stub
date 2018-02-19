@@ -49,42 +49,42 @@ object PLAStubController extends PLAStubController {
 
 trait PLAStubController  extends BaseController {
 
-  def readProtections(nino: String): Action[AnyContent] = Action { implicit request =>
+  def readProtections(nino: String): Action[AnyContent] = Action.async { implicit request =>
     val result = PLAProtectionService.retrieveProtections(nino)
-    result match {
+    result.map {
       case Some(protection) => Ok(Json.toJson(protection))
       case None => Ok(Json.toJson(Protections(nino, Some("stubPSACheckRef"), List.empty)))
     }
   }
 
-  def readProtection(nino: String, protectionId: Long): Action[AnyContent] = Action { implicit request =>
-    val protections: Option[Protections] = PLAProtectionService.retrieveProtections(nino)
-    val protection: Option[Protection] = protections.get.protections.find(p => p.id == protectionId)
-    protection match {
-      case Some(protection) => Ok(Json.toJson(protection))
+  def readProtection(nino: String, protectionId: Long): Action[AnyContent] = Action.async { implicit request =>
+    val protections: Future[Option[Protections]] = PLAProtectionService.retrieveProtections(nino)
+    val protection: Future[Option[Protection]] = protections.map(_.get.protections.find(p => p.id == protectionId))
+    protection.map {
+      case Some(result) => Ok(Json.toJson(result))
       case None => NotFound(Json.toJson(Error("no protection found for specified protection id")))
     }
   }
 
-  def readProtectionVersion(nino: String, protectionId: Long, version: Int): Action[AnyContent] = Action { implicit request =>
-    val protections: Option[Protections] = PLAProtectionService.retrieveProtections(nino)
-    val protection: Option[Protection] = protections.get.protections.find(p => p.id == protectionId)
-    protection match {
-      case Some(protection) if protection.previousVersions.get.exists(p => p.version == version) =>
-        Ok(Json.toJson(protection.previousVersions.get.find(p => p.version == version).get))
+  def readProtectionVersion(nino: String, protectionId: Long, version: Int): Action[AnyContent] = Action.async { implicit request =>
+    val protections: Future[Option[Protections]] = PLAProtectionService.retrieveProtections(nino)
+    val protection: Future[Option[Protection]] = protections.map(_.get.protections.find(p => p.id == protectionId))
+    protection.map {
+      case Some(result) if result.previousVersions.get.exists(p => p.version == version) =>
+        Ok(Json.toJson(result.previousVersions.get.find(p => p.version == version).get))
       case None => NotFound(Json.toJson(Error("no protection found for specified protection id")))
       case _ => NotFound(Json.toJson(Error("protection of specified id found, but no match for specified version")))
     }
   }
 
   // TODO - this is unused and shouldn't be if we're keeping to spec but leaving here as the old version used this approach
-  def readProtection(nino: String, protectionId: Long, version: Option[Int]): Action[AnyContent] = Action { implicit request =>
-    val protections: Option[Protections] = PLAProtectionService.retrieveProtections(nino)
-    val protection: Option[Protection] = protections.get.protections.find(p => p.id == protectionId)
-    protection match {
-      case Some(protection) if version.isEmpty => Ok(Json.toJson(protection))
-      case Some(protection) if version.nonEmpty && protection.previousVersions.get.exists(p => p.version == version.get) =>
-        Ok(Json.toJson(protection.previousVersions.get.find(p => p.version == version.get).get))
+  def readProtection(nino: String, protectionId: Long, version: Option[Int]): Action[AnyContent] = Action.async { implicit request =>
+    val protections: Future[Option[Protections]] = PLAProtectionService.retrieveProtections(nino)
+    val protection: Future[Option[Protection]] = protections.map(_.get.protections.find(p => p.id == protectionId))
+    protection.map {
+      case Some(result) if version.isEmpty => Ok(Json.toJson(result))
+      case Some(result) if version.nonEmpty && result.previousVersions.get.exists(p => p.version == version.get) =>
+        Ok(Json.toJson(result.previousVersions.get.find(p => p.version == version.get).get))
       case None => NotFound(Json.toJson(Error("no protection found for specified protection id")))
       case _ => NotFound(Json.toJson(Error("protection of specified id found, but no match for specified version")))
     }
@@ -111,14 +111,19 @@ trait PLAStubController  extends BaseController {
             // apply the rules against any existing protections to determine the notification ID, and then process
             // the application according to that ID
             //val existingProtectionsFut = protectionRepository.findLatestVersionsOfAllProtectionsByNino(nino)
-            val existingProtections = PLAProtectionService.findAllProtectionsByNino(nino) match
-            { case Some(protections) => protections
+            val existingProtections = PLAProtectionService.findAllProtectionsByNino(nino).map {
+              case Some(protections) => protections
               case _ =>
-                val protection : Protection = Generator.genProtection(createProtectionRequest.nino).sample.get
-                List{protection.copy(`type` = createProtectionRequest.protection.`type`,status = Protection.extractedStatus(Protection.Status.Unsuccessful))}
+                val protection: Protection = Generator.genProtection(createProtectionRequest.nino).sample.get
+                List {
+                  protection.copy(`type` = createProtectionRequest.protection.`type`, status = Protection.extractedStatus(Protection.Status.Unsuccessful))
+                }
             }
-              val notificationId = appRules.check(existingProtections)
-              processApplication(nino, createProtectionRequest, notificationId, existingProtections)
+
+            existingProtections.flatMap { protections =>
+              val notificationId = appRules.check(protections)
+              processApplication(nino, createProtectionRequest, notificationId, protections)
+            }
           }
           .getOrElse {
             val error = Error("invalid protection type specified")
@@ -152,17 +157,17 @@ trait PLAStubController  extends BaseController {
         val calculatedRelevantAmountMinusPSO = calculatedRelevantAmount - updateProtectionRequest.pensionDebits.map { debits => debits.map(_.pensionDebitEnteredAmount).sum }.getOrElse(0.0)
         //val amendmentTargetFutureOption = protectionRepository.findLatestVersionOfProtectionByNinoAndId(nino, protectionId)
         val amendmentTargetOption = PLAProtectionService.findProtectionByNinoAndId(nino, protectionId)
-        amendmentTargetOption match {
+        amendmentTargetOption.flatMap[Result] {
           case None =>
-            Future.successful(NotFound(Json.toJson(Error(message = "protection to amend not found"))))
+            Future(NotFound(Json.toJson(Error(message = "protection to amend not found"))))
           case Some(amendmentTarget) if amendmentTarget.`type` != updateProtectionRequest.protection.`type` =>
             val error = Error("specified protection type does not match that of the protection to be amended")
-            Future.successful(BadRequest(Json.toJson(error)))
+            Future(BadRequest(Json.toJson(error)))
           case Some(amendmentTarget) if amendmentTarget.version != updateProtectionRequest.protection.version =>
             val error = Error("specified protection version does not match that of the protection to be amended")
-            Future.successful(BadRequest(Json.toJson(error)))
+            Future(BadRequest(Json.toJson(error)))
           case Some(amendmentTarget) =>
-            val existingProtections = PLAProtectionService.findAllProtectionsByNino(nino) match
+            val existingProtections = PLAProtectionService.findAllProtectionsByNino(nino).map
             { case Some(protections) => protections
               case _ =>
                 val protection : Protection = Generator.genProtection(updateProtectionRequest.nino).sample.get
@@ -178,10 +183,16 @@ trait PLAStubController  extends BaseController {
                 .map { rules: AmendmentRules =>
                   // apply the rules against any existing protections to determine the notification ID, and then process
                   // the requested amendment according to that ID
-                  val notificationId = { if (updateProtectionRequest.protection.withdrawnDate.isEmpty )
-                                        rules.check(calculatedRelevantAmountMinusPSO, existingProtections)
-                  else { rules.check(0.0, existingProtections)} }
-                  processAmendment(nino, amendmentTarget, updateProtectionRequest, notificationId)
+                  existingProtections.flatMap { protections =>
+                    val notificationId = {
+                      if (updateProtectionRequest.protection.withdrawnDate.isEmpty)
+                        rules.check(calculatedRelevantAmountMinusPSO, protections)
+                      else {
+                        rules.check(0.0, protections)
+                      }
+                    }
+                    processAmendment(nino, amendmentTarget, updateProtectionRequest, notificationId)
+                  }
                 }
                 .getOrElse {
                   // no amendment rules matching specified protection type
