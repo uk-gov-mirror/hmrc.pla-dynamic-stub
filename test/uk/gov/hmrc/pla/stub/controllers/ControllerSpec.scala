@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,20 @@ class PLAStubControllerSpec extends UnitSpec with MockitoSugar{
       contentAsJson(response).shouldBe(successfulProtectionsRetrieveOutput)
 
     }
+
+    "return Status: OK Body: List of Empty Protections on retrieval of empty list" in {
+      val nino = "AA000000A"
+      val protections = Json.fromJson[Protections](successfulEmptyProtectionsRetrieveOutput)
+      when(mockController.readProtections(nino)).thenReturn(Action {
+        Ok(Json.toJson(protections.get))
+      })
+
+      val response = mockController.readProtections(nino).apply(FakeRequest("GET", s"/individual/$nino/protections/"))
+      status(response) shouldBe OK
+      contentAsJson(response).shouldBe(successfulEmptyProtectionsRetrieveOutput)
+
+    }
+
   }
   "Read Protection" should {
     "return Status: OK Body: Protection for given nino and protection id on retrieval protection request" in {
