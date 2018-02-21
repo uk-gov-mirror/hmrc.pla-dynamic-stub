@@ -57,7 +57,7 @@ trait TestSetupController extends BaseController {
     * @return
     */
   def removeAllProtections(): Action[AnyContent] = Action.async { implicit request =>
-    protectionsStore.clear
+    protectionsStore.removeProtectionsCollection()
     Future.successful(Ok)
   }
 
@@ -68,7 +68,7 @@ trait TestSetupController extends BaseController {
     * @return
     */
   def removeProtections(nino: String): Action[AnyContent] = Action.async { implicit request =>
-    protectionsStore.remove(nino)
+    protectionsStore.removeByNino(nino)
     Future.successful(Ok)
   }
 
@@ -90,7 +90,7 @@ trait TestSetupController extends BaseController {
     * @return
     */
   def dropProtectionsCollection(): Action[AnyContent] = Action.async { implicit request =>
-    protectionsStore.clear
+    protectionsStore.removeProtectionsCollection()
     Future.successful(Ok)
   }
 

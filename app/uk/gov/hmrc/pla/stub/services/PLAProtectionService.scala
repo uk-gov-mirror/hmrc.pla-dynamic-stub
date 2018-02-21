@@ -16,68 +16,83 @@
 
 package uk.gov.hmrc.pla.stub.services
 
-import play.api.Logger
-import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
-import play.api.mvc.Results.{BadRequest, NotFound, Ok}
+import play.api.mvc.Results.{NotFound, Ok}
+import reactivemongo.api.commands.WriteResult
 import uk.gov.hmrc.pla.stub.model.Generator.pensionSchemeAdministratorCheckReferenceGen
-import uk.gov.hmrc.smartstub.Enumerable.instances.ninoEnumNoSpaces
-import uk.gov.hmrc.pla.stub.model.{Generator, _}
-import uk.gov.hmrc.smartstub._
+import uk.gov.hmrc.pla.stub.model._
+import uk.gov.hmrc.pla.stub.repository.MongoProtectionRepository
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 object PLAProtectionService {
 
-  lazy val protectionsStore = Generator.protectionsStore.empty
+  lazy val protectionsStore = MongoProtectionRepository.apply()
 
-  def updateDormantProtectionStatusAsOpen(nino:String) : Unit= {
-    val protections: Protections = PLAProtectionService.retrieveProtections(nino).get
-    protections.protections.find(_.status == 2) match {
-      case Some(existingDormantProtection) => {
-        val ltaProtections : List[Protection] = existingDormantProtection.copy(status = 1) :: protections.protections.filter(_.status != 2)
-        protectionsStore(nino) = protections.copy(protections = ltaProtections)
+  def saveProtections(protections: Protections): Future[WriteResult] = {
+    def save(deleted: Unit, data: Protections): Future[WriteResult] = protectionsStore.insertProtection(data)
+    protectionsStore.removeByNino(protections.nino).flatMap(remove => save(remove, protections))
+  }
+
+  def updateDormantProtectionStatusAsOpen(nino: String): Future[Unit] = {
+    PLAProtectionService.retrieveProtections(nino).map { optProtections =>
+      val protections = optProtections.get
+      protections.protections.find(_.status == 2) match {
+        case Some(existingDormantProtection) =>
+          val ltaProtections: List[Protection] = existingDormantProtection.copy(status = 1) :: protections.protections.filter(_.status != 2)
+          saveProtections(protections.copy(protections = ltaProtections))
+        case None => ()
       }
-      case None => ()
     }
   }
 
-  def retrieveProtections(nino: String): Option[Protections] = {
-    protectionsStore.get(nino)
+  def retrieveProtections(nino: String): Future[Option[Protections]] = {
+    protectionsStore.findProtectionsByNino(nino)
   }
 
-  def insertOrUpdateProtection(protection : Protection) : Future[Result] = {
-    val protections = protectionsStore.get(protection.nino)
+  def insertOrUpdateProtection(protection: Protection): Future[Result] = {
+    val protections = protectionsStore.findProtectionsByNino(protection.nino)
     val pensionSchemeAdministratorCheckReference = pensionSchemeAdministratorCheckReferenceGen.sample
-    val ltaProtections : List[Protection] = protections match {
-      case Some(protections) =>   protection :: protections.protections.filter(_.id != protection.id)
-      case None =>  List(protection)
-    }
-    protectionsStore(protection.nino) = Protections(protection.nino,pensionSchemeAdministratorCheckReference,ltaProtections)
-    Future.successful(Ok)
-  }
-
-  def removeProtectionByNinoAndProtectionId(nino: String,protectionId : Long) : Future[Result] = {
-    val protections: Protections = PLAProtectionService.retrieveProtections(nino).get
-    protections.protections.find(_.id == protectionId) match {
-      case Some(_) => {
-        val ltaProtections : List[Protection] = protections.protections.filter(_.id != protectionId)
-        protectionsStore(nino) = protections.copy(protections = ltaProtections)
-        Future.successful(Ok)
+    def ltaProtections(optProtections: Option[Protections]): Future[List[Protection]] = Future {
+      optProtections match {
+        case Some(value) => protection :: value.protections.filter(_.id != protection.id)
+        case None => List(protection)
       }
-      case None => Future.successful(NotFound)
+    }
+    def listToProtections(list: List[Protection]): Future[Protections] = Future(Protections(protection.nino, pensionSchemeAdministratorCheckReference, list))
+    for {
+      optProtections <- protections
+      updatedProtections <- ltaProtections(optProtections)
+      result <- listToProtections(updatedProtections)
+      save <- saveProtections(result)
+    } yield Ok
+  }
+
+  def removeProtectionByNinoAndProtectionId(nino: String, protectionId: Long): Future[Result] = {
+    PLAProtectionService.retrieveProtections(nino).map { optProtections =>
+      val protections = optProtections.get
+      protections.protections.find(_.id == protectionId) match {
+        case Some(_) =>
+          val ltaProtections: List[Protection] = protections.protections.filter(_.id != protectionId)
+          saveProtections(protections.copy(protections = ltaProtections))
+          Ok
+        case None => NotFound
+      }
     }
   }
 
-  def findAllProtectionsByNino(nino: String): Option[List[Protection]] = {
-    PLAProtectionService.retrieveProtections(nino) match {
+  def findAllProtectionsByNino(nino: String): Future[Option[List[Protection]]] = {
+    PLAProtectionService.retrieveProtections(nino).map {
       case Some(protections) => Some(protections.protections)
-      case _ => None}
+      case _ => None
+    }
   }
 
-  def findProtectionByNinoAndId(nino:String, protectionId: Long): Option[Protection] = {
-    val protections: Option[Protections] = PLAProtectionService.retrieveProtections(nino)
-    protections.get.protections.find(p => p.id == protectionId)
+  def findProtectionByNinoAndId(nino: String, protectionId: Long): Future[Option[Protection]] = {
+    val protections: Future[Option[Protections]] = PLAProtectionService.retrieveProtections(nino)
+    protections.map {
+      _.get.protections.find(p => p.id == protectionId)
+    }
   }
-
 }
