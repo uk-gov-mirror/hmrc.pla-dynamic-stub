@@ -21,15 +21,15 @@ private object AppDependencies {
   private val hmrcTestVersion = "3.0.0"
   private val playReactiveMongoVersion = "6.2.0"
   private val pegdownVersion = "1.6.0"
-  private val scalaTestVersion = "2.2.6"
+  private val scalaTestVersion = "3.0.0"
 
   val compile = Seq(
     ws,
     "uk.gov.hmrc" %% "microservice-bootstrap" % microserviceBootstrapVersion,
     "uk.gov.hmrc" %% "play-reactivemongo" % playReactiveMongoVersion,
-    "uk.gov.hmrc" %% "stub-data-generator" % "0.4.0",
+    "uk.gov.hmrc" %% "stub-data-generator" % "0.5.3",
     "org.scalacheck" %% "scalacheck" % "1.13.5",
-    "io.github.amrhassan" %% "scalacheck-cats" % "0.3.2"
+    "io.github.amrhassan" %% "scalacheck-cats" % "0.4.0"
   )
 
   trait TestDependencies {
@@ -44,9 +44,9 @@ private object AppDependencies {
         "org.scalatest" %% "scalatest" % scalaTestVersion % scope,
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-        "org.mockito" % "mockito-core" % "2.7.22" % scope,
+        "org.mockito" % "mockito-core" % "2.13.0" % scope,
         "uk.gov.hmrc" %% "domain" % "5.1.0",
-        "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope
+        "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % scope
       )
     }.test
 
