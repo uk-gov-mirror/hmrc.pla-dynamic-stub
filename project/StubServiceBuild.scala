@@ -17,7 +17,7 @@ private object AppDependencies {
   import play.core.PlayVersion
 
 
-  private val microserviceBootstrapVersion = "6.18.0"
+  private val microserviceBootstrapVersion = "8.0.0"
   private val hmrcTestVersion = "3.0.0"
   private val playReactiveMongoVersion = "6.2.0"
   private val pegdownVersion = "1.6.0"
@@ -45,7 +45,7 @@ private object AppDependencies {
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
         "org.mockito" % "mockito-core" % "2.13.0" % scope,
-        "uk.gov.hmrc" %% "domain" % "5.1.0",
+        "uk.gov.hmrc" %% "domain" % "5.2.0",
         "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % scope
       )
     }.test
