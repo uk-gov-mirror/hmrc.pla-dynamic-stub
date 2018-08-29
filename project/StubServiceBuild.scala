@@ -17,7 +17,7 @@ private object AppDependencies {
   import play.core.PlayVersion
 
 
-  private val microserviceBootstrapVersion = "8.0.0"
+  private val microserviceBootstrapVersion = "8.1.0"
   private val hmrcTestVersion = "3.0.0"
   private val playReactiveMongoVersion = "6.2.0"
   private val pegdownVersion = "1.6.0"
