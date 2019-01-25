@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,6 @@ import uk.gov.hmrc.pla.stub.model.Protections
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-/**
-  * Mongo repository for use by PLA dynamic stub to store/retrieve protections for an individual
-  */
-
 object MongoProtectionRepository extends MongoDbConnection {
   private lazy val repository = new MongoProtectionRepository
 
@@ -38,32 +34,15 @@ object MongoProtectionRepository extends MongoDbConnection {
 }
 
 trait ProtectionRepository extends Repository[Protections, BSONObjectID] {
-
   def findAllProtectionsByNino(nino: String)(implicit ec: ExecutionContext): Future[List[Protections]]
-
   def findProtectionsByNino(nino: String)(implicit ec: ExecutionContext): Future[Option[Protections]]
-
   def insertProtection(protections: Protections): Future[WriteResult]
-
-  /**
-    * Housekeeping op to remove all protections associated with a nino
-    */
   def removeByNino(nino: String)(implicit ec: ExecutionContext): Future[Unit]
-
-
-  /**
-    * Housekeeping op to remove all protections
-    */
   def removeAllProtections()(implicit ec: ExecutionContext): Future[Unit]
-
-  /**
-    * Housekeeping op to remove protections collection
-    */
   def removeProtectionsCollection()(implicit ec: ExecutionContext): Future[Boolean]
 }
 
-class
-MongoProtectionRepository(implicit mongo: () => DB)
+class MongoProtectionRepository(implicit mongo: () => DB)
   extends ReactiveRepository[Protections, BSONObjectID]("protections", mongo, Protections.protectionsFormat)
     with ProtectionRepository {
 
