@@ -1,31 +1,23 @@
 import sbt._
-import uk.gov.hmrc.SbtAutoBuildPlugin
-import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
-import uk.gov.hmrc.versioning.SbtGitVersioning
 
 object StubServiceBuild extends Build with MicroService {
-  import scala.util.Properties.envOrElse
-
   val appName = "pla-dynamic-stub"
-
-
   override lazy val appDependencies: Seq[ModuleID] = AppDependencies()
 }
 
 private object AppDependencies {
-  import play.sbt.PlayImport._
   import play.core.PlayVersion
+  import play.sbt.PlayImport._
 
-
-  private val microserviceBootstrapVersion = "8.7.0"
-  private val hmrcTestVersion = "3.2.0"
+  private val bootstrapPlayVersion = "4.8.0"
+  private val hmrcTestVersion = "3.4.0-play-25"
   private val playReactiveMongoVersion = "6.2.0"
   private val pegdownVersion = "1.6.0"
   private val scalaTestVersion = "3.0.0"
 
   val compile = Seq(
     ws,
-    "uk.gov.hmrc" %% "microservice-bootstrap" % microserviceBootstrapVersion,
+    "uk.gov.hmrc" %% "bootstrap-play-25" % bootstrapPlayVersion,
     "uk.gov.hmrc" %% "play-reactivemongo" % playReactiveMongoVersion,
     "uk.gov.hmrc" %% "stub-data-generator" % "0.5.3",
     "org.scalacheck" %% "scalacheck" % "1.13.5",
@@ -45,13 +37,12 @@ private object AppDependencies {
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
         "org.mockito" % "mockito-core" % "2.13.0" % scope,
-        "uk.gov.hmrc" %% "domain" % "5.2.0",
+        "uk.gov.hmrc" %% "domain" % "5.3.0",
         "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % scope
       )
     }.test
-
   }
 
-  def apply() = compile ++ Test()
+  def apply(): Seq[ModuleID] = compile ++ Test()
 }
 
