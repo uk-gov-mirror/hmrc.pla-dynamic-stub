@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,8 @@ package uk.gov.hmrc.pla.stub.model
 
 import java.time.LocalDateTime
 
-import play.api.libs.json.{JsPath, JsValue, Json}
+import play.api.libs.json.{JsValue, Json}
 import play.api.libs.json.{Format, Reads, Writes}
-import play.api.libs.functional.syntax._
-
-import scala.util.Random
 
 case class Protection(
     nino: String,

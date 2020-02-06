@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,21 @@ package uk.gov.hmrc.pla.stub.controllers
 
 import org.mockito.Mockito.when
 import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.libs.json._
-import play.api.mvc.Action
+import play.api.mvc.{Action, ControllerComponents}
 import play.api.mvc.BodyParsers._
 import play.api.mvc.Results.Ok
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.pla.stub.model._
+import uk.gov.hmrc.pla.stub.services.PLAProtectionService
 import uk.gov.hmrc.play.test.UnitSpec
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 object TestData {
+
   val validFP2016CeateRequest = CreateLTAProtectionRequest(
     nino = Generator.randomNino,
     protection = ProtectionApplicationTestData.Fp2016
@@ -47,14 +50,15 @@ object TestData {
   val notFoundResponse = "\"reason\":\"Resource not found\""
   val notFoundProtectionsForNinoResponse = "\"no protections found for nino\""
 }
+class PLAStubControllerSpec extends UnitSpec with MockitoSugar with GuiceOneServerPerSuite {
 
-class PLAStubControllerSpec extends UnitSpec with MockitoSugar{
-
+  implicit val ec = ExecutionContext.global
+  implicit lazy val cc = app.injector.instanceOf[ControllerComponents]
+  implicit lazy val protectionService = mock[PLAProtectionService]
   val mockController: PLAStubController = mock[PLAStubController]
 
   "Read Protections" should {
     "return Status: OK Body: Protections for given nino on retrieval protections request" in {
-
       val nino = "RC966967C"
       val protections = Json.fromJson[Protections](successfulProtectionsRetrieveOutput)
       when(mockController.readProtections(nino)).thenReturn(Action {
@@ -145,22 +149,20 @@ class PLAStubControllerSpec extends UnitSpec with MockitoSugar{
   }
 
   "PSA Lookup" should {
+    val controller = new PLAStubController(cc, protectionService, ec)
     "return a 403 Forbidden with empty body when provided no environment header" in {
-      val controller = PLAStubController
       val result = controller.updatedPSALookup("PSA12345678A", "IP141000000000A").apply(FakeRequest())
       status(result) shouldBe FORBIDDEN
       contentAsString(result) shouldBe ""
     }
 
     "return a 401 Unauthorised with body when provided no auth header" in {
-      val controller = PLAStubController
       val result = controller.updatedPSALookup("PSA12345678A", "IP141000000000A").apply(FakeRequest().withHeaders(TestData.envHeader))
       status(result) shouldBe UNAUTHORIZED
       contentAsString(result) should include("Required OAuth credentials not provided")
     }
 
     "return a 400 BadRequest with body when provided invalid psa and lta references" in {
-      val controller = PLAStubController
       val result = controller.updatedPSALookup("", "").apply(FakeRequest().withHeaders(TestData.envHeader, TestData.authHeader))
       val error = "Your submission contains one or more errors. Failed Parameter(s) - [pensionSchemeAdministratorCheckReference, lifetimeAllowanceReference]"
       status(result) shouldBe BAD_REQUEST
@@ -168,7 +170,6 @@ class PLAStubControllerSpec extends UnitSpec with MockitoSugar{
     }
 
     "return a 400 BadRequest with body when provided invalid psaReference" in {
-      val controller = PLAStubController
       val result = controller.updatedPSALookup("", "IP141000000000A").apply(FakeRequest().withHeaders(TestData.envHeader, TestData.authHeader))
       val error = "Your submission contains one or more errors. Failed Parameter(s) - [pensionSchemeAdministratorCheckReference]"
       status(result) shouldBe BAD_REQUEST
@@ -176,7 +177,6 @@ class PLAStubControllerSpec extends UnitSpec with MockitoSugar{
     }
 
     "return a 400 BadRequest with body when provided invalid ltaReference" in {
-      val controller = PLAStubController
       val result = controller.updatedPSALookup("PSA12345678A", "").apply(FakeRequest().withHeaders(TestData.envHeader, TestData.authHeader))
       val error = "Your submission contains one or more errors. Failed Parameter(s) - [lifetimeAllowanceReference]"
       status(result) shouldBe BAD_REQUEST
@@ -184,21 +184,18 @@ class PLAStubControllerSpec extends UnitSpec with MockitoSugar{
     }
 
     "return a 404 with body when provided psa reference ending in Z" in {
-      val controller = PLAStubController
       val result = controller.updatedPSALookup("PSA12345678Z", "IP141000000000A").apply(FakeRequest().withHeaders(TestData.envHeader, TestData.authHeader))
       status(result) shouldBe NOT_FOUND
       contentAsString(result) should include(TestData.notFoundResponse)
     }
 
     "return a 404 with body when provided lta reference ending in Z" in {
-      val controller = PLAStubController
       val result = controller.updatedPSALookup("PSA12345678A", "IP141000000000Z").apply(FakeRequest().withHeaders(TestData.envHeader, TestData.authHeader))
       status(result) shouldBe NOT_FOUND
       contentAsString(result) should include(TestData.notFoundResponse)
     }
 
     "return a 200 with body when provided valid references" in {
-      val controller = PLAStubController
       val result = controller.updatedPSALookup("PSA12345678A", "IP141000000000A").apply(FakeRequest().withHeaders(TestData.envHeader, TestData.authHeader))
       status(result) shouldBe OK
       contentAsString(result) should include(TestData.validResponse)
