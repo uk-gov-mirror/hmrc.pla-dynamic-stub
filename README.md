@@ -21,3 +21,6 @@ The stub attempts to apply the same business rules as the full production servic
 ### License
 
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html")
+
+# Running locally requires starting test routes, like this:
+sbt "run 9012 -Dapplication.router=testOnlyDoNotUseInAppConf.Routes"

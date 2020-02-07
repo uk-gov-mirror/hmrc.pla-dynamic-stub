@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.pla.stub.model
+package uk.gov.hmrc.pla.stub.connectors
 
-import play.api.libs.json.Json
+import reactivemongo.api.{DefaultDB, FailoverStrategy}
+import uk.gov.hmrc.mongo.SimpleMongoConnection
 
-case class PSALookupResult(
-  protectionType: Int,
-  validResult: Boolean,
-  relevantAmount: Option[Double] = None)
+import scala.concurrent.duration.FiniteDuration
 
-object PSALookupResult {
-  implicit val psaLookupResultFormat = Json.format[PSALookupResult]
+class NonConnectingMongoConnection extends SimpleMongoConnection {
+  override val mongoConnectionUri: String = "NonConnectingMongoConnection"
+  override val failoverStrategy: Option[FailoverStrategy] = None
+  override val dbTimeout: Option[FiniteDuration] = None
+
+  override implicit def db: () => DefaultDB = throw new RuntimeException("ONLY STUB MONGO DB")
 }

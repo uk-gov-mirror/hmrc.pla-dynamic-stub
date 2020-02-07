@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,12 @@ trait ExceptionTriggersActions  {
        |
     """.stripMargin).as[JsObject]
 
-  case class WithExceptionTriggerCheckAction(nino: String)(implicit ec: ExecutionContext) extends ActionBuilder[Request] {
+  case class WithExceptionTriggerCheckAction(nino: String)
+                                            (implicit ec: ExecutionContext, cc: ControllerComponents)
+    extends ActionBuilder[Request, AnyContent] {
+
+    override val parser: BodyParser[AnyContent] = cc.parsers.defaultBodyParser
+    override protected val executionContext: ExecutionContext = cc.executionContext
 
     def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]) = {
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)

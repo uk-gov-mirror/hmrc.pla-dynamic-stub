@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,27 @@
 
 package uk.gov.hmrc.pla.stub.repository
 
+import javax.inject.Inject
 import play.modules.reactivemongo.MongoDbConnection
 import reactivemongo.api.DB
 import reactivemongo.api.commands.{WriteConcern, WriteResult}
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.mongo.{ReactiveRepository, Repository}
+import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.pla.stub.model.Protections
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-object MongoProtectionRepository extends MongoDbConnection {
-  private lazy val repository = new MongoProtectionRepository
-
-  def apply(): MongoProtectionRepository = repository
-}
-
-trait ProtectionRepository extends Repository[Protections, BSONObjectID] {
-  def findAllProtectionsByNino(nino: String)(implicit ec: ExecutionContext): Future[List[Protections]]
-  def findProtectionsByNino(nino: String)(implicit ec: ExecutionContext): Future[Option[Protections]]
+trait ProtectionRepository {
+  def findAllProtectionsByNino(nino: String): Future[List[Protections]]
+  def findProtectionsByNino(nino: String): Future[Option[Protections]]
   def insertProtection(protections: Protections): Future[WriteResult]
-  def removeByNino(nino: String)(implicit ec: ExecutionContext): Future[Unit]
-  def removeAllProtections()(implicit ec: ExecutionContext): Future[Unit]
-  def removeProtectionsCollection()(implicit ec: ExecutionContext): Future[Boolean]
+  def removeByNino(nino: String): Future[Unit]
+  def removeAllProtections(): Future[Unit]
+  def removeProtectionsCollection(): Future[Boolean]
 }
 
-class MongoProtectionRepository(implicit mongo: () => DB)
+class MongoProtectionRepository(implicit mongo: () => DB, implicit val ec: ExecutionContext)
   extends ReactiveRepository[Protections, BSONObjectID]("protections", mongo, Protections.protectionsFormat)
     with ProtectionRepository {
 
@@ -53,26 +47,26 @@ class MongoProtectionRepository(implicit mongo: () => DB)
       sparse = true)
   )
 
-  override def findAllProtectionsByNino(nino: String)(implicit ec: ExecutionContext): Future[List[Protections]] = {
+  override def findAllProtectionsByNino(nino: String): Future[List[Protections]] = {
     find("nino" -> nino)
   }
 
-  override def findProtectionsByNino(nino: String)(implicit ec: ExecutionContext): Future[Option[Protections]] = {
+  override def findProtectionsByNino(nino: String): Future[Option[Protections]] = {
     findAllProtectionsByNino(nino).map {
       _.headOption
-    }
+    }(ec)
   }
 
-  override def removeByNino(nino: String)(implicit ec: ExecutionContext): Future[Unit] =
-    remove("nino" -> nino).map { _ => }
+  override def removeByNino(nino: String): Future[Unit] =
+    remove("nino" -> nino).map { _ => }(ec)
 
 
-  override def removeAllProtections()(implicit ec: ExecutionContext): Future[Unit] =
+  override def removeAllProtections(): Future[Unit] =
     removeAll(WriteConcern.Acknowledged).map { _ => }
 
-  override def removeProtectionsCollection()(implicit ec: ExecutionContext): Future[Boolean] =
+  override def removeProtectionsCollection(): Future[Boolean] =
     drop(ec)
 
   override def insertProtection(protections: Protections): Future[WriteResult] =
-    insert(protections)
+    insert(protections)(ec)
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.pla.stub.repository
 
-import uk.gov.hmrc.mongo.{Repository,ReactiveRepository}
+import uk.gov.hmrc.mongo.ReactiveRepository
 
 import play.modules.reactivemongo.MongoDbConnection
 
@@ -39,7 +39,7 @@ object MongoExceptionTriggerRepository extends MongoDbConnection {
   def apply() : MongoExceptionTriggerRepository = repository
 }
 
-trait ExceptionTriggerRepository extends Repository[ExceptionTrigger, BSONObjectID] {
+trait ExceptionTriggerRepository {
   def findExceptionTriggerByNino(nino: String)(implicit ec: ExecutionContext): Future[Option[ExceptionTrigger]]
   def removeAllExceptionTriggers()(implicit ec: ExecutionContext): Future[Unit]
 }
