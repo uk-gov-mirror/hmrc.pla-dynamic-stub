@@ -4,9 +4,9 @@ object AppDependencies {
 import play.core.PlayVersion
   import play.sbt.PlayImport._
 
-  private val bootstrapPlayVersion = "1.3.0"
+  private val bootstrapPlayVersion = "1.8.0"
   private val hmrcTestVersion = "3.9.0-play-26"
-  private val playReactiveMongoVersion = "7.23.0-play-26"
+  private val playReactiveMongoVersion = "7.27.0-play-26"
   private val pegdownVersion = "1.6.0"
   private val scalaTestVersion = "3.0.8"
 
@@ -32,7 +32,7 @@ import play.core.PlayVersion
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
         "org.mockito" % "mockito-core" % "2.3.4" % scope,
-        "uk.gov.hmrc" %% "domain" % "5.6.0-play-26",
+        "uk.gov.hmrc" %% "domain" % "5.9.0-play-26",
         "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.3" % scope
       )
     }.test
