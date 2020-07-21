@@ -4,9 +4,9 @@ object AppDependencies {
 import play.core.PlayVersion
   import play.sbt.PlayImport._
 
-  private val bootstrapPlayVersion = "1.8.0"
+  private val bootstrapPlayVersion = "1.14.0"
   private val hmrcTestVersion = "3.9.0-play-26"
-  private val playReactiveMongoVersion = "7.27.0-play-26"
+  private val playReactiveMongoVersion = "7.30.0-play-26"
   private val pegdownVersion = "1.6.0"
   private val scalaTestVersion = "3.0.8"
 
@@ -15,7 +15,7 @@ import play.core.PlayVersion
     "uk.gov.hmrc" %% "bootstrap-play-26" % bootstrapPlayVersion,
     "uk.gov.hmrc" %% "simple-reactivemongo" % playReactiveMongoVersion,
     "uk.gov.hmrc" %% "stub-data-generator" % "0.5.3",
-    "org.scalacheck" %% "scalacheck" % "1.13.5",
+    "org.scalacheck" %% "scalacheck" % "1.14.3",
     "io.github.amrhassan" %% "scalacheck-cats" % "0.4.0"
   )
 

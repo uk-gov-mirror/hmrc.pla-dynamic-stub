@@ -16,10 +16,8 @@
 
 package uk.gov.hmrc.pla.stub.repository
 
-import javax.inject.Inject
-import play.modules.reactivemongo.MongoDbConnection
-import reactivemongo.api.DB
-import reactivemongo.api.commands.{WriteConcern, WriteResult}
+import reactivemongo.api.commands.WriteResult
+import reactivemongo.api.{DB, WriteConcern}
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.mongo.ReactiveRepository

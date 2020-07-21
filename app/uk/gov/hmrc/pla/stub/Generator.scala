@@ -76,14 +76,9 @@ object Generator {
     }.sometimes
 
 
-  val pensionDebitGen: Gen[PensionDebit] = {
-    Gen.choose(1, 1000000).map {
-      _.toDouble
-    } |@|
-      Gen.date(2014, 2017).map {
-        _.format(ISO_LOCAL_DATE)
-      }
-  }.map(PensionDebit.apply)
+  val pensionDebitGen: Gen[PensionDebit] =
+    (Gen.choose(1, 1000000).map(_.toDouble),
+      Gen.date(2014, 2017).map (_.format(ISO_LOCAL_DATE))).mapN(PensionDebit.apply)
 
   def genProtection(nino: String): Gen[Protection] = {
     for {
@@ -104,43 +99,36 @@ object Generator {
       }
   }
 
-  def genProtection(nino: String, id: Long, version: Int): Gen[Protection] = {
-    Gen.const(nino) |@|                                                    // nino
-      Gen.const(id) |@|                                                    // id
-      Gen.const(version) |@|                                               // version
-      Gen.choose(1, 7) |@|                                                 // `type`
-      Gen.choose(1, 6) |@|                                                 // status
-      Gen.choose(1, 47).map(_.toShort).
-        sometimes |@|                                                      // notificationID
-      Gen.alphaStr.sometimes |@|                                           // notificationMsg
-      refGen.almostAlways |@|                                              // protectionReference
-      Gen.date(2014, 2017).map {
-        _.format(ISO_LOCAL_DATE)
-      }.sample |@|                                                     // certificateDate
-      genTime.map {
-        _.format(ISO_LOCAL_TIME)
-      }.sample |@|                                                    // certificateTime
-      genMoney |@|                                                       // relevantAmount
-      genMoney |@|                                                       // protectedAmount
-      genMoney |@|                                                       // preADayPensionInPayment
-      genMoney |@|                                                       // postADayBCE
-      genMoney |@|                                                       // uncrystallisedRights
-      genMoney |@|                                                       // nonUKRights
-      genMoney |@|                                                       // pensionDebiitEnteredAmount
-       None |@|                                                          // pensionDebitStartDate
-      genMoney |@|                                                       // pensionDebitTotalAmount
-      Gen.listOf(pensionDebitGen).
-        sometimes |@|                                                    // pensionDebits
-      genVersions(nino, id, version - 1).
-        map {_.some} |@|                                                 // previousVersions
-      None                                                               // withdrawnDate
-  }.map(Protection.apply)
+  def genProtection(nino: String, id: Long, version: Int): Gen[Protection] =
+    (Gen.const(nino),
+      Gen.const(id),
+      Gen.const(version),
+      Gen.choose(1, 7),
+      Gen.choose(1, 6),
+      Gen.choose(1, 47).map(_.toShort).sometimes,
+      Gen.alphaStr.sometimes,
+      refGen.almostAlways,
+      Gen.date(2014, 2017).map {_.format(ISO_LOCAL_DATE)}.sometimes,
+      genTime.map {_.format(ISO_LOCAL_TIME)}.sometimes,
+      genMoney,
+      genMoney,
+      genMoney,
+      genMoney,
+      genMoney,
+      genMoney,
+      genMoney,
+      Gen.const(None),
+      genMoney,
+      Gen.listOf(pensionDebitGen).sometimes,
+      genVersions(nino, id, version - 1).map {_.some},
+      Gen.const(None))                                                // withdrawnDate
+      .mapN(Protection.apply)
 
-  def genProtections(nino: String): Gen[Protections] = {
-    Gen.const(nino) |@|
-      pensionSchemeAdministratorCheckReferenceGen.sometimes |@|
-      Gen.choose(2, 5).flatMap { n => Gen.listOfN(n, genProtection(nino)) }
-  }.map(Protections.apply)
+  def genProtections(nino: String): Gen[Protections] = (
+    Gen.const(nino),
+    pensionSchemeAdministratorCheckReferenceGen.sometimes,
+    Gen.choose(2, 5).flatMap { n => Gen.listOfN(n, genProtection(nino)) })
+    .mapN(Protections.apply)
 
   val protectionsStore: PersistentGen[String, Protections]=  genProtections("").asMutable[String]
 

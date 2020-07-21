@@ -17,6 +17,7 @@
 package uk.gov.hmrc.pla.stub.model
 
 import play.api.libs.json._
+import scala.language.implicitConversions
 
 /**
   * Utility class for creating json formatters for enumerations.

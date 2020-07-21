@@ -19,25 +19,29 @@ package uk.gov.hmrc.pla.stub.controllers.testControllers
 import uk.gov.hmrc.pla.stub.repository.MongoExceptionTriggerRepository
 import uk.gov.hmrc.pla.stub.model.{Error, ExceptionTrigger, Protection}
 import play.api.mvc._
-import play.api.libs.json._
 import uk.gov.hmrc.pla.stub.services.PLAProtectionService
 import javax.inject.Inject
+import play.api.libs.json.{JsValue, Json}
+import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class TestSetupController @Inject()(val mcc: play.api.mvc.MessagesControllerComponents,
                                     val protectionService: PLAProtectionService,
-                                    implicit val ec: ExecutionContext) extends BackendController(mcc) {
+                                    implicit val ec: ExecutionContext,
+                                    playBodyParsers: PlayBodyParsers,
+                                    implicit val reactiveMongoComponent: ReactiveMongoComponent) extends BackendController(mcc) {
 
-  val exceptionTriggerRepository = MongoExceptionTriggerRepository()
+  val exceptionTriggerRepository = new MongoExceptionTriggerRepository()
 
   /**
    * Stub-only convenience operation to add a protection to test data
    *
    * @return
    */
-  def insertProtection(): Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
+  def insertProtection(): Action[JsValue] = Action.async(playBodyParsers.json) { implicit request =>
     val protectionJs = request.body.validate[Protection]
     protectionJs.fold(
       errors => Future.successful(BadRequest(Json.toJson(Error(message = "body failed validation with errors: " + errors)))),
@@ -53,7 +57,7 @@ class TestSetupController @Inject()(val mcc: play.api.mvc.MessagesControllerComp
    *
    * @return
    */
-  def removeAllProtections(): Action[AnyContent] = Action.async { implicit request =>
+  def removeAllProtections(): Action[AnyContent] = Action.async { _ =>
     protectionService.protectionsStore.removeProtectionsCollection()
     Future.successful(Ok)
   }
@@ -64,7 +68,7 @@ class TestSetupController @Inject()(val mcc: play.api.mvc.MessagesControllerComp
    * @param nino
    * @return
    */
-  def removeProtections(nino: String): Action[AnyContent] = Action.async { implicit request =>
+  def removeProtections(nino: String): Action[AnyContent] = Action.async { _ =>
     protectionService.protectionsStore.removeByNino(nino)
     Future.successful(Ok)
   }
@@ -76,7 +80,7 @@ class TestSetupController @Inject()(val mcc: play.api.mvc.MessagesControllerComp
    * @param protectionId
    * @return
    */
-  def removeProtection(nino: String, protectionId: Long): Action[AnyContent] = Action.async { implicit request =>
+  def removeProtection(nino: String, protectionId: Long): Action[AnyContent] = Action.async { _ =>
     protectionService.removeProtectionByNinoAndProtectionId(nino, protectionId)
     Future.successful(Ok)
   }
@@ -86,7 +90,7 @@ class TestSetupController @Inject()(val mcc: play.api.mvc.MessagesControllerComp
    *
    * @return
    */
-  def dropProtectionsCollection(): Action[AnyContent] = Action.async { implicit request =>
+  def dropProtectionsCollection(): Action[AnyContent] = Action.async { _ =>
     protectionService.protectionsStore.removeProtectionsCollection()
     Future.successful(Ok)
   }
@@ -97,7 +101,7 @@ class TestSetupController @Inject()(val mcc: play.api.mvc.MessagesControllerComp
    *
    * @return
    */
-  def removeExceptionTriggers(): Action[AnyContent] = Action.async { implicit request =>
+  def removeExceptionTriggers(): Action[AnyContent] = Action.async {_ =>
     exceptionTriggerRepository.removeAllExceptionTriggers()(ec)
     Future.successful(Ok)
   }
@@ -107,7 +111,7 @@ class TestSetupController @Inject()(val mcc: play.api.mvc.MessagesControllerComp
    *
    * @return
    */
-  def insertExceptionTrigger(): Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
+  def insertExceptionTrigger(): Action[JsValue] = Action.async(playBodyParsers.json) { implicit request =>
     val exceptionTriggerJs = request.body.validate[ExceptionTrigger]
     exceptionTriggerJs.fold(
       errors => Future.successful(BadRequest(Json.toJson(Error(message = "body failed validation with errors: " + errors)))),
