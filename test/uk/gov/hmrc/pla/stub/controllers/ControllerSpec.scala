@@ -17,14 +17,14 @@
 package uk.gov.hmrc.pla.stub.controllers
 
 import org.mockito.Mockito.when
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.libs.json._
-import play.api.mvc.{Action, ControllerComponents}
-import play.api.mvc.BodyParsers._
 import play.api.mvc.Results.Ok
+import play.api.mvc.{ControllerComponents, PlayBodyParsers}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import uk.gov.hmrc.pla.stub.actions.ExceptionTriggersActions
 import uk.gov.hmrc.pla.stub.model._
 import uk.gov.hmrc.pla.stub.services.PLAProtectionService
 import uk.gov.hmrc.play.test.UnitSpec
@@ -52,8 +52,12 @@ object TestData {
 }
 class PLAStubControllerSpec extends UnitSpec with MockitoSugar with GuiceOneServerPerSuite {
 
+  def Action = cc.actionBuilder
+
   implicit val ec = ExecutionContext.global
   implicit lazy val cc = app.injector.instanceOf[ControllerComponents]
+  implicit lazy val playBodyParsers = app.injector.instanceOf[PlayBodyParsers]
+  implicit lazy val exceptionTriggersActions = app.injector.instanceOf[ExceptionTriggersActions]
   implicit lazy val protectionService = mock[PLAProtectionService]
   val mockController: PLAStubController = mock[PLAStubController]
 
@@ -120,7 +124,7 @@ class PLAStubControllerSpec extends UnitSpec with MockitoSugar with GuiceOneServ
   "Create Protection" should {
     "return Status: OK Body: CreateLTAProtectionResponse for successful valid CreateLTAProtectionRequest with all optional data" in {
       val nino = "RC966967C"
-      when(mockController.createProtection(nino)).thenReturn(Action.async(parse.json) {
+      when(mockController.createProtection(nino)).thenReturn(Action.async(playBodyParsers.json) {
         _ =>
           Future.successful(Ok(validCreateProtectionResponseOutput))
       })
@@ -136,7 +140,7 @@ class PLAStubControllerSpec extends UnitSpec with MockitoSugar with GuiceOneServ
     "return Status: OK Body: UpdateLTAProtectionResponse for successful valid UpdateLTAProtectionRequest with all optional data" in {
       val nino = "RC966967C"
       val protectionId=5
-      when(mockController.updateProtection(nino,protectionId)).thenReturn(Action.async(parse.json) {
+      when(mockController.updateProtection(nino,protectionId)).thenReturn(Action.async(playBodyParsers.json) {
         _ =>
           Future.successful(Ok(validUpdateProtectionResponseOutput))
       })
@@ -149,7 +153,7 @@ class PLAStubControllerSpec extends UnitSpec with MockitoSugar with GuiceOneServ
   }
 
   "PSA Lookup" should {
-    val controller = new PLAStubController(cc, protectionService, ec)
+    val controller = new PLAStubController(cc, protectionService, ec, playBodyParsers, exceptionTriggersActions)
     "return a 403 Forbidden with empty body when provided no environment header" in {
       val result = controller.updatedPSALookup("PSA12345678A", "IP141000000000A").apply(FakeRequest())
       status(result) shouldBe FORBIDDEN

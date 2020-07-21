@@ -18,10 +18,7 @@ package uk.gov.hmrc.pla.stub.rules
 
 import java.time.LocalDateTime
 import java.util.Random
-
 import uk.gov.hmrc.pla.stub.model.Protection
-import uk.gov.hmrc.pla.stub.model.ProtectionAmendment
-import uk.gov.hmrc.pla.stub.model.Protection.Type._
 import uk.gov.hmrc.play.test.UnitSpec
 
 object Generator {
@@ -167,8 +164,6 @@ class FP2016ApplicationRulesSpec extends UnitSpec {
 
   "An application for an FP2016 when an open Primary already exists for the individual" should {
     "return a notification ID of 18" in {
-      val existing=openPrimary
-
       FP2016ApplicationRules.check(List(openPrimary)) shouldBe 18
     }
   }

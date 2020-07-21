@@ -17,27 +17,20 @@
 package uk.gov.hmrc.pla.stub.actions
 
 
+import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc._
+import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.pla.stub.model.ExceptionTrigger
-import uk.gov.hmrc.pla.stub.repository.{ExceptionTriggerRepository, MongoExceptionTriggerRepository}
+import uk.gov.hmrc.pla.stub.repository.MongoExceptionTriggerRepository
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.HeaderCarrierConverter
 
-object ExceptionTriggersActions extends ExceptionTriggersActions {
+class ExceptionTriggersActions @Inject()(implicit reactiveMongoComponent: ReactiveMongoComponent) {
 
-  override lazy val exceptionTriggerRepository = MongoExceptionTriggerRepository()
-}
+  lazy val exceptionTriggerRepository = new MongoExceptionTriggerRepository
 
-trait ExceptionTriggersActions  {
-
-  val exceptionTriggerRepository: ExceptionTriggerRepository
-
-  private type AsyncPlayRequest = Request[AnyContent] => Future[Result]
-
-  private val noNotificationIdJson = Json.parse(
+  val noNotificationIdJson = Json.parse(
     s"""
        |  {
        |      "nino": "AA055121",
@@ -55,40 +48,40 @@ trait ExceptionTriggersActions  {
        |    }
        |
     """.stripMargin).as[JsObject]
+}
 
-  case class WithExceptionTriggerCheckAction(nino: String)
-                                            (implicit ec: ExecutionContext, cc: ControllerComponents)
-    extends ActionBuilder[Request, AnyContent] {
+case class WithExceptionTriggerCheckAction(nino: String)
+                                          (implicit ec: ExecutionContext, cc: ControllerComponents,
+                                           exceptionTriggersActions: ExceptionTriggersActions)
+  extends ActionBuilder[Request, AnyContent] {
 
-    override val parser: BodyParser[AnyContent] = cc.parsers.defaultBodyParser
-    override protected val executionContext: ExecutionContext = cc.executionContext
+  override val parser: BodyParser[AnyContent] = cc.parsers.defaultBodyParser
+  override protected val executionContext: ExecutionContext = cc.executionContext
 
-    def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]) = {
-      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
-
-      exceptionTriggerRepository.findExceptionTriggerByNino(nino).flatMap {
-        case Some(trigger) => processExceptionTrigger(trigger)
-        case None => block(request)
-      }
+  def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]) = {
+    exceptionTriggersActions.exceptionTriggerRepository.findExceptionTriggerByNino(nino).flatMap {
+      case Some(trigger) => processExceptionTrigger(trigger)
+      case None => block(request)
     }
+  }
 
-    /**
-     * When passed an exception trigger, either returns the corresponding error response or throws the correct exception/timeout
-     * @param trigger: ExceptionTrigger
-     * @return
-     */
-    private def processExceptionTrigger(trigger: ExceptionTrigger): Future[Result] = {
-      import ExceptionTrigger.ExceptionType
-      trigger.extractedExceptionType match {
-        case ExceptionType.BadRequest => Future.successful(Results.BadRequest("Simulated bad request"))
-        case ExceptionType.NotFound => Future.successful(Results.NotFound("Simulated npot found"))
-        case ExceptionType.InternalServerError => Future.successful(Results.InternalServerError("Simulated 500 error"))
-        case ExceptionType.BadGateway => Future.successful(Results.BadGateway("Simulated 502 error"))
-        case ExceptionType.ServiceUnavailable => Future.successful(Results.ServiceUnavailable("Simulated 503 error"))
-        case ExceptionType.UncaughtException => throw new Exception()
-        case ExceptionType.Timeout => Thread.sleep(60000); Future.successful(Results.Ok)
-        case ExceptionType.NoNotificationId => Future.successful(Results.Ok(noNotificationIdJson))
-      }
+  /**
+   * When passed an exception trigger, either returns the corresponding error response or throws the correct exception/timeout
+   *
+   * @param trigger : ExceptionTrigger
+   * @return
+   */
+  private def processExceptionTrigger(trigger: ExceptionTrigger): Future[Result] = {
+    import ExceptionTrigger.ExceptionType
+    trigger.extractedExceptionType match {
+      case ExceptionType.BadRequest => Future.successful(Results.BadRequest("Simulated bad request"))
+      case ExceptionType.NotFound => Future.successful(Results.NotFound("Simulated not found"))
+      case ExceptionType.InternalServerError => Future.successful(Results.InternalServerError("Simulated 500 error"))
+      case ExceptionType.BadGateway => Future.successful(Results.BadGateway("Simulated 502 error"))
+      case ExceptionType.ServiceUnavailable => Future.successful(Results.ServiceUnavailable("Simulated 503 error"))
+      case ExceptionType.UncaughtException => throw new Exception()
+      case ExceptionType.Timeout => Thread.sleep(60000); Future.successful(Results.Ok)
+      case ExceptionType.NoNotificationId => Future.successful(Results.Ok(exceptionTriggersActions.noNotificationIdJson))
     }
   }
 }

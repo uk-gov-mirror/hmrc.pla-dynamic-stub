@@ -16,14 +16,11 @@
 
 package uk.gov.hmrc.pla.stub.repository
 
-import uk.gov.hmrc.mongo.ReactiveRepository
-
-import play.modules.reactivemongo.MongoDbConnection
-
-import reactivemongo.api.indexes.{IndexType, Index}
-import reactivemongo.api.DB
-import reactivemongo.api.commands.WriteConcern
+import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.WriteConcern
+import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.pla.stub.model.ExceptionTrigger
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -31,21 +28,14 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
  * Mongo repository for use by PLA dynamic stub to store/retrieve the types of exceptions to throw during downstream error testing
  */
-
-
-object MongoExceptionTriggerRepository extends MongoDbConnection {
-  private lazy val repository = new MongoExceptionTriggerRepository
-
-  def apply() : MongoExceptionTriggerRepository = repository
-}
-
 trait ExceptionTriggerRepository {
   def findExceptionTriggerByNino(nino: String)(implicit ec: ExecutionContext): Future[Option[ExceptionTrigger]]
   def removeAllExceptionTriggers()(implicit ec: ExecutionContext): Future[Unit]
 }
 
-class MongoExceptionTriggerRepository (implicit mongo: () => DB)
-extends ReactiveRepository[ExceptionTrigger, BSONObjectID]("exceptionTriggers", mongo,ExceptionTrigger.exceptionTriggerFormat)
+class MongoExceptionTriggerRepository()(implicit reactiveMongoComponent: ReactiveMongoComponent)
+  extends ReactiveRepository[ExceptionTrigger, BSONObjectID]("exceptionTriggers",
+  reactiveMongoComponent.mongoConnector.db,ExceptionTrigger.exceptionTriggerFormat)
 with ExceptionTriggerRepository {
 
   override def indexes = Seq(

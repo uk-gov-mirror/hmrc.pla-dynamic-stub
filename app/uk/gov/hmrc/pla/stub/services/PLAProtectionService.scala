@@ -19,9 +19,7 @@ package uk.gov.hmrc.pla.stub.services
 import javax.inject.Inject
 import play.api.mvc.Result
 import play.api.mvc.Results.{NotFound, Ok}
-import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.commands.WriteResult
-import uk.gov.hmrc.mongo.{MongoConnector, SimpleMongoConnection}
 import uk.gov.hmrc.pla.stub.guice.MongoProtectionRepositoryFactory
 import uk.gov.hmrc.pla.stub.model.Generator.pensionSchemeAdministratorCheckReferenceGen
 import uk.gov.hmrc.pla.stub.model._

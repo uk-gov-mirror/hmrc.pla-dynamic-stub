@@ -17,18 +17,20 @@
 package uk.gov.hmrc.pla.stub.controllers
 
 import java.time.LocalDateTime
+
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, _}
 import uk.gov.hmrc.pla.stub.model._
 import uk.gov.hmrc.pla.stub.notifications.{CertificateStatus, Notifications}
-import uk.gov.hmrc.pla.stub.actions.ExceptionTriggersActions.WithExceptionTriggerCheckAction
 import uk.gov.hmrc.pla.stub.rules._
 import uk.gov.hmrc.pla.stub.services.PLAProtectionService
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.smartstub.Enumerable.instances.ninoEnumNoSpaces
 import uk.gov.hmrc.smartstub.{Generator => _, _}
 import javax.inject.Inject
+import uk.gov.hmrc.pla.stub.actions.{ExceptionTriggersActions, WithExceptionTriggerCheckAction}
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
@@ -36,9 +38,12 @@ import scala.util.Random
  * The controller for the Protect your Lifetime Allowance (PLA) service REST API dynamic stub
  */
 class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionService: PLAProtectionService,
-                                  implicit val ec: ExecutionContext) extends BackendController(mcc) {
+                                  implicit val ec: ExecutionContext,
+                                  playBodyParsers: PlayBodyParsers,
+                                  implicit val exceptionTriggersActions: ExceptionTriggersActions)
+  extends BackendController(mcc) {
 
-  def readProtections(nino: String): Action[AnyContent] = Action.async { implicit request =>
+  def readProtections(nino: String): Action[AnyContent] = Action.async { _ =>
     val result = protectionService.retrieveProtections(nino)
     result.map {
       case Some(protection) => Ok(Json.toJson(protection))
@@ -46,7 +51,7 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
     }
   }
 
-  def readProtection(nino: String, protectionId: Long): Action[AnyContent] = Action.async { implicit request =>
+  def readProtection(nino: String, protectionId: Long): Action[AnyContent] = Action.async { _ =>
     val protections: Future[Option[Protections]] = protectionService.retrieveProtections(nino)
     val protection: Future[Option[Protection]] = protections.map(_.get.protections.find(p => p.id == protectionId))
     protection.map {
@@ -55,7 +60,7 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
     }
   }
 
-  def readProtectionVersion(nino: String, protectionId: Long, version: Int): Action[AnyContent] = Action.async { implicit request =>
+  def readProtectionVersion(nino: String, protectionId: Long, version: Int): Action[AnyContent] = Action.async { _ =>
     val protections: Future[Option[Protections]] = protectionService.retrieveProtections(nino)
     val protection: Future[Option[Protection]] = protections.map(_.get.protections.find(p => p.id == protectionId))
     protection.map {
@@ -67,7 +72,7 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
   }
 
   // TODO - this is unused and shouldn't be if we're keeping to spec but leaving here as the old version used this approach
-  def readProtection(nino: String, protectionId: Long, version: Option[Int]): Action[AnyContent] = Action.async { implicit request =>
+  def readProtection(nino: String, protectionId: Long, version: Option[Int]): Action[AnyContent] = Action.async { _ =>
     val protections: Future[Option[Protections]] = protectionService.retrieveProtections(nino)
     val protection: Future[Option[Protection]] = protections.map(_.get.protections.find(p => p.id == protectionId))
     protection.map {
@@ -79,7 +84,8 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
     }
   }
 
-  def createProtection(nino: String): Action[JsValue] = WithExceptionTriggerCheckAction(nino)(ec, mcc).async(BodyParsers.parse.json) { implicit request =>
+  def createProtection(nino: String): Action[JsValue] = WithExceptionTriggerCheckAction(nino)(ec, mcc, exceptionTriggersActions).
+    async(playBodyParsers.json) { implicit request =>
 
     val protectionApplicationBodyJs = request.body.validate[CreateLTAProtectionRequest]
     val headers = request.headers.toSimpleMap
@@ -123,7 +129,7 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
 
 
   def updateProtection(nino: String, protectionId: Long): Action[JsValue] =
-    WithExceptionTriggerCheckAction(nino)(ec, mcc).async(BodyParsers.parse.json) { implicit request =>
+    WithExceptionTriggerCheckAction(nino)(ec, mcc, exceptionTriggersActions).async(playBodyParsers.json) { implicit request =>
       System.err.println("Amendment request body ==> " + request.body.toString)
       val protectionUpdateJs = request.body.validate[UpdateLTAProtectionRequest]
       protectionUpdateJs.fold(
@@ -194,7 +200,7 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
     }
 
 
-  def psaLookupNew(ref: String, psaref: String): Action[JsValue] = Action(BodyParsers.parse.json) { implicit request =>
+  def psaLookupNew(ref: String, psaref: String): Action[JsValue] = Action(playBodyParsers.json) { _ =>
     // decode the Nino from the psa ref
     val c1 = psaref.substring(3, 4).toShort.toChar
     val c2 = psaref.substring(5, 6).toShort.toChar
@@ -231,6 +237,7 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
         case (false, false) => "pensionSchemeAdministratorCheckReference, lifetimeAllowanceReference"
         case (false, true) => "pensionSchemeAdministratorCheckReference"
         case (true, false) => "lifetimeAllowanceReference"
+        case _ =>
       }
       val errorMsg = s"Your submission contains one or more errors. Failed Parameter(s) - [$refValidationResponse]"
       Logger.error(errorMsg)
@@ -279,25 +286,6 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
         val response = PSALookupErrorResult("Resource not found")
         Logger.error(response.reason)
         Future.successful(NotFound(Json.toJson(response)))
-    }
-  }
-
-  /**
-   * When passed an exception trigger, either returns the corresponding error response or throws he correct exception/timeout
-   *
-   * @param trigger
-   * @return
-   */
-  private def processExceptionTrigger(trigger: ExceptionTrigger): Future[Result] = {
-    import ExceptionTrigger.ExceptionType
-    trigger.extractedExceptionType match {
-      case ExceptionType.BadRequest => Future.successful(BadRequest("Simulated bad request"))
-      case ExceptionType.NotFound => Future.successful(NotFound("Simulated npot found"))
-      case ExceptionType.InternalServerError => Future.successful(InternalServerError("Simulated 500 error"))
-      case ExceptionType.BadGateway => Future.successful(BadGateway("Simulated 502 error"))
-      case ExceptionType.ServiceUnavailable => Future.successful(ServiceUnavailable("Simulated 503 error"))
-      case ExceptionType.UncaughtException => throw new Exception()
-      case ExceptionType.Timeout => Thread.sleep(60000); Future.successful(Ok)
     }
   }
 
@@ -356,6 +344,7 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
       case Some(FP2016) => 1250000.0
       case Some(IP2016) => 1250000.0
       case Some(IP2014) => 1500000.0
+      case _ => 0
     }
 
     val relevantAmountMinusPSOs = applicationRequest.protection.relevantAmount.map { amt => amt - totalPensionDebitAmount.getOrElse(0.0) }
@@ -419,7 +408,7 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
             certificateTime = Some(currTime))
           protectionService.insertOrUpdateProtection(nowDormantProtection)
         } getOrElse Future.failed(new Exception("No open protection found, but notification ID indicates one should exist"))
-      case _ => Future.successful() // no update needed for existing protections
+      case _ => Future.unit // no update needed for existing protections
     }
 
     val doUpdateProtections = for {
@@ -502,6 +491,7 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
         val maxProtectedAmount = amendmentRequest.protection.requestedType match {
           case Some(IP2014) => 1500000.00
           case Some(IP2016) => 1250000.00
+          case _ => 0
         }
 
         Protection(
@@ -543,42 +533,12 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
   // helper for generating a  test PSA Check Ref from a test Nino (n.b. only the stub does this)
   private def ninoChar2TwoDigits(nc: Char) = nc.toShort.toString.substring(0, 1)
 
-  private val psaCheckRefLastCharsList = "ABCDEFGHJKLMNPRSTXYZ".toList
-
-  private def randomLastPSAChar = Random.shuffle(psaCheckRefLastCharsList).head
-
   private def genPSACheckRef(nino: String) = {
     val d1d2 = ninoChar2TwoDigits(nino.charAt(0))
     val d3d4 = ninoChar2TwoDigits(nino.charAt(1))
     "PSA" + d1d2 + d3d4 + nino.substring(2, 7) + nino.head
   }
 
-  //  /**
-  //    * Convert a stored protection history to the result protection object returned to the client
-  //    *
-  //    * @param protectionVersions  - must have at least one entry. The first entry is always assumed to be the
-  //    *                            latest version.
-  //    * @param version             if set then the result is the specified version of the protection,
-  //    *                            otherwise just returns the latest version
-  //    * @param setPreviousVersions if true then fill in the previousVersions field of the result, if and only if
-  //    *                            it is latest version of the protection that is returned as the overall result.
-  //    **/
-  //  private def toResultProtection(protectionVersions: List[Protection],
-  //                                 version: Option[Int],
-  //                                 setPreviousVersions: Boolean)(implicit request: Request[AnyContent]): Option[Protection] = {
-  //    val protectionOpt =
-  //      version.fold(protectionVersions.headOption)(v => protectionVersions.find(_.version == v))
-  //    protectionOpt map { protection: Protection =>
-  //      // generate previousVersions (if applicable) as well as self field into the result protection
-  //      val previousVersionList = Some(protectionVersions.tail map { p =>
-  //        routes.PLAStubController.readProtection(p.nino, p.id, Some(p.version)).absoluteURL()
-  //      }) filter (_ => setPreviousVersions)
-  //      // val self = Some(routes.PLAStubController.readProtection(protection.nino, protection.id, None).absoluteURL())
-  //      protection.copy(notificationMsg = None)
-  ////      protection.copy(previousVersions = previousVersionList, notificationMsg = None)
-  //    }
-  //  }
-  //
   /**
    * Inject any relevant parameter values from Protection into the notification message
    *
