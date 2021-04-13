@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,11 @@ import uk.gov.hmrc.pla.stub.repository.MongoExceptionTriggerRepository
 import uk.gov.hmrc.pla.stub.model.{Error, ExceptionTrigger, Protection}
 import play.api.mvc._
 import uk.gov.hmrc.pla.stub.services.PLAProtectionService
+
 import javax.inject.Inject
 import play.api.libs.json.{JsValue, Json}
 import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

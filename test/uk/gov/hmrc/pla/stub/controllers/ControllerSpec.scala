@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@
 package uk.gov.hmrc.pla.stub.controllers
 
 import org.mockito.Mockito.when
+import org.scalatest.Matchers.convertToAnyShouldWrapper
 import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.libs.json._
 import play.api.mvc.Results.Ok
@@ -27,7 +29,6 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.pla.stub.actions.ExceptionTriggersActions
 import uk.gov.hmrc.pla.stub.model._
 import uk.gov.hmrc.pla.stub.services.PLAProtectionService
-import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -50,7 +51,7 @@ object TestData {
   val notFoundResponse = "\"reason\":\"Resource not found\""
   val notFoundProtectionsForNinoResponse = "\"no protections found for nino\""
 }
-class PLAStubControllerSpec extends UnitSpec with MockitoSugar with GuiceOneServerPerSuite {
+class PLAStubControllerSpec extends PlaySpec with MockitoSugar with GuiceOneServerPerSuite {
 
   def Action = cc.actionBuilder
 
@@ -61,7 +62,7 @@ class PLAStubControllerSpec extends UnitSpec with MockitoSugar with GuiceOneServ
   implicit lazy val protectionService = mock[PLAProtectionService]
   val mockController: PLAStubController = mock[PLAStubController]
 
-  "Read Protections" should {
+  "Read Protections" when {
     "return Status: OK Body: Protections for given nino on retrieval protections request" in {
       val nino = "RC966967C"
       val protections = Json.fromJson[Protections](successfulProtectionsRetrieveOutput)
@@ -89,7 +90,7 @@ class PLAStubControllerSpec extends UnitSpec with MockitoSugar with GuiceOneServ
     }
 
   }
-  "Read Protection" should {
+  "Read Protection" when {
     "return Status: OK Body: Protection for given nino and protection id on retrieval protection request" in {
       val nino = "RC966967C"
       val protectionId=1
@@ -105,7 +106,7 @@ class PLAStubControllerSpec extends UnitSpec with MockitoSugar with GuiceOneServ
     }
   }
 
-  "Read Protection Version" should {
+  "Read Protection Version" when {
     "return Status: OK Body: Protection for given nino , protection id and version on retrieval protection request" in {
       val nino = "RC966967C"
       val protectionId=1
@@ -121,7 +122,7 @@ class PLAStubControllerSpec extends UnitSpec with MockitoSugar with GuiceOneServ
 
     }
   }
-  "Create Protection" should {
+  "Create Protection" when {
     "return Status: OK Body: CreateLTAProtectionResponse for successful valid CreateLTAProtectionRequest with all optional data" in {
       val nino = "RC966967C"
       when(mockController.createProtection(nino)).thenReturn(Action.async(playBodyParsers.json) {
@@ -136,7 +137,7 @@ class PLAStubControllerSpec extends UnitSpec with MockitoSugar with GuiceOneServ
     }
   }
 
-  "Update Protection" should {
+  "Update Protection" when {
     "return Status: OK Body: UpdateLTAProtectionResponse for successful valid UpdateLTAProtectionRequest with all optional data" in {
       val nino = "RC966967C"
       val protectionId=5
@@ -152,7 +153,7 @@ class PLAStubControllerSpec extends UnitSpec with MockitoSugar with GuiceOneServ
     }
   }
 
-  "PSA Lookup" should {
+  "PSA Lookup" when {
     val controller = new PLAStubController(cc, protectionService, ec, playBodyParsers, exceptionTriggersActions)
     "return a 403 Forbidden with empty body when provided no environment header" in {
       val result = controller.updatedPSALookup("PSA12345678A", "IP141000000000A").apply(FakeRequest())

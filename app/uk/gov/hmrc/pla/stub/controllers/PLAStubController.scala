@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,20 @@
 package uk.gov.hmrc.pla.stub.controllers
 
 import java.time.LocalDateTime
-
-import play.api.Logger
+import play.api.{Logger, Logging}
 import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, _}
+import uk.gov.hmrc.pla.stub.Generator
 import uk.gov.hmrc.pla.stub.model._
 import uk.gov.hmrc.pla.stub.notifications.{CertificateStatus, Notifications}
 import uk.gov.hmrc.pla.stub.rules._
 import uk.gov.hmrc.pla.stub.services.PLAProtectionService
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.smartstub.Enumerable.instances.ninoEnumNoSpaces
 import uk.gov.hmrc.smartstub.{Generator => _, _}
+
 import javax.inject.Inject
 import uk.gov.hmrc.pla.stub.actions.{ExceptionTriggersActions, WithExceptionTriggerCheckAction}
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
@@ -41,7 +42,7 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
                                   implicit val ec: ExecutionContext,
                                   playBodyParsers: PlayBodyParsers,
                                   implicit val exceptionTriggersActions: ExceptionTriggersActions)
-  extends BackendController(mcc) {
+  extends BackendController(mcc) with Logging {
 
   def readProtections(nino: String): Action[AnyContent] = Action.async { _ =>
     val result = protectionService.retrieveProtections(nino)
@@ -227,10 +228,10 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
     val environment = request.headers.get("Environment")
     val auth = request.headers.get("Authorization")
     if (environment.isEmpty) {
-      Logger.error("Request is missing environment header")
+      logger.error("Request is missing environment header")
       Future.successful(Forbidden)
     } else if (auth.isEmpty) {
-      Logger.error("Request is missing auth header")
+      logger.error("Request is missing auth header")
       Future.successful(Unauthorized(Json.toJson(PSALookupErrorResult("Required OAuth credentials not provided"))))
     } else if (!validationResult._1 | !validationResult._2) {
       val refValidationResponse = validationResult match {
@@ -240,11 +241,11 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
         case _ =>
       }
       val errorMsg = s"Your submission contains one or more errors. Failed Parameter(s) - [$refValidationResponse]"
-      Logger.error(errorMsg)
+      logger.error(errorMsg)
       val response = PSALookupErrorResult(errorMsg)
       Future.successful(BadRequest(Json.toJson(response)))
     } else {
-      Logger.info("Successful request submitted")
+      logger.info("Successful request submitted")
       returnPSACheckResult(psaRef, ltaRef)
     }
   }
@@ -284,7 +285,7 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
         Future.successful(Ok(Json.toJson(PSALookupUpdatedResult(psaRef, 5, 1, Some(BigDecimal.exact("25000"))))))
       case _ =>
         val response = PSALookupErrorResult("Resource not found")
-        Logger.error(response.reason)
+        logger.error(response.reason)
         Future.successful(NotFound(Json.toJson(response)))
     }
   }
@@ -590,7 +591,7 @@ class PLAStubController @Inject()(val mcc: ControllerComponents, val protectionS
       val environment = headers.get("Environment")
       val token = headers.get("Authorization")
       val notSet = "<NOT SET>"
-      play.Logger.info("Request headers: environment =" + environment.getOrElse(notSet) + ", authorisation=" + token.getOrElse(notSet))
+      logger.info("Request headers: environment =" + environment.getOrElse(notSet) + ", authorisation=" + token.getOrElse(notSet))
 
       //  Ensure any header validation errors are accumulated with any body validation errors into a single JsError
       //  (the below code is not so nice, could be a good use case for scalaz validation)
