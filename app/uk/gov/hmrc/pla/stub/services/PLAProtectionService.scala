@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import javax.inject.Inject
 import play.api.mvc.Result
 import play.api.mvc.Results.{NotFound, Ok}
 import reactivemongo.api.commands.WriteResult
+import uk.gov.hmrc.pla.stub.Generator.pensionSchemeAdministratorCheckReferenceGen
 import uk.gov.hmrc.pla.stub.guice.MongoProtectionRepositoryFactory
-import uk.gov.hmrc.pla.stub.model.Generator.pensionSchemeAdministratorCheckReferenceGen
 import uk.gov.hmrc.pla.stub.model._
 import uk.gov.hmrc.pla.stub.repository.MongoProtectionRepository
 

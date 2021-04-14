@@ -1,5 +1,4 @@
 import uk.gov.hmrc.DefaultBuildSettings.{defaultSettings, scalaSettings, targetJvm}
-import uk.gov.hmrc.SbtArtifactory
 import sbt.Keys._
 import sbt._
 import uk.gov.hmrc._
@@ -13,7 +12,7 @@ lazy val plugins : Seq[Plugins] = Seq(play.sbt.PlayScala)
 lazy val playSettings : Seq[Setting[_]] = Seq.empty
 
 val appName = "pla-dynamic-stub"
-val silencerVersion = "1.7.0"
+val silencerVersion = "1.7.1"
 
 lazy val scoverageSettings = {
   import scoverage.ScoverageKeys
@@ -27,14 +26,14 @@ lazy val scoverageSettings = {
 }
 
 lazy val root = Project(appName, file("."))
-  .enablePlugins(Seq(play.sbt.PlayScala,SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory) ++ plugins : _*)
+  .enablePlugins(Seq(play.sbt.PlayScala,SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin) ++ plugins : _*)
   .settings(playSettings ++ scoverageSettings : _*)
   .settings(scalaSettings: _*)
   .settings(SbtDistributablesPlugin.publishingSettings: _*)
   .settings(defaultSettings(): _*)
   .settings(
     targetJvm := "jvm-1.8",
-    scalaVersion := "2.12.11",
+    scalaVersion := "2.12.12",
     libraryDependencies ++= AppDependencies(),
     dependencyOverrides += "commons-codec" % "commons-codec" % "1.12",
     parallelExecution in Test := false,

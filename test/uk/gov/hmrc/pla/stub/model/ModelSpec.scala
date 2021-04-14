@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,10 @@ import java.util.Random
 import cats.implicits._
 import org.scalacheck._
 import org.scalacheck.support.cats._
+import org.scalatest.Matchers.convertToAnyShouldWrapper
+import org.scalatestplus.play.PlaySpec
 import uk.gov.hmrc.smartstub._
 import play.api.libs.json._
-import uk.gov.hmrc.play.test.UnitSpec
 
 object Generator {
   import uk.gov.hmrc.domain.Generator
@@ -210,11 +211,11 @@ object ProtectionTestData {
     version = 1)
 }
 
-class ProtectionsFormatSpec extends UnitSpec {
+class ProtectionsFormatSpec extends PlaySpec {
 
   import ProtectionTestData._
 
-  "FP2016 json read and write functions" should {
+  "FP2016 json read and write functions" when {
     "be an isomorphic pair" in {
       val json = Json.toJson(openFP2016)
       val parsedProtection = Json.fromJson[Protection](json)
@@ -222,7 +223,7 @@ class ProtectionsFormatSpec extends UnitSpec {
     }
   }
 
-  "FP2016 with pension debits json read and write functions" should {
+  "FP2016 with pension debits json read and write functions" when {
     "be an isomorphic pair" in {
       val json = Json.toJson(openFP2016WithPensionDebits)
       val parsedProtection = Json.fromJson[Protection](json)
@@ -231,7 +232,7 @@ class ProtectionsFormatSpec extends UnitSpec {
   }
 
 
-  "IP2016 json read and write functions" should {
+  "IP2016 json read and write functions" when {
     "be an isomorphic pair" in {
       val json = Json.toJson(openIP2016)
       val parsedProtection = Json.fromJson[Protection](json)
@@ -239,7 +240,7 @@ class ProtectionsFormatSpec extends UnitSpec {
     }
   }
 
-  "IP2014 json read and write functions" should {
+  "IP2014 json read and write functions" when {
     "be an isomorphic pair" in {
       val json = Json.toJson(openIP2014)
       val parsedProtection = Json.fromJson[Protection](json)
@@ -247,7 +248,7 @@ class ProtectionsFormatSpec extends UnitSpec {
     }
   }
 
-  "FP2014 json read and write functions" should {
+  "FP2014 json read and write functions" when {
     "be an isomorphic pair" in {
       val json = Json.toJson(openFP2014)
       val parsedProtection = Json.fromJson[Protection](json)
@@ -255,7 +256,7 @@ class ProtectionsFormatSpec extends UnitSpec {
     }
   }
 
-  "Primary protection json read and write functions" should {
+  "Primary protection json read and write functions" when {
     "be an isomorphic pair" in {
       val json = Json.toJson(openPrimary)
       val parsedProtection = Json.fromJson[Protection](json)
@@ -263,7 +264,7 @@ class ProtectionsFormatSpec extends UnitSpec {
     }
   }
 
-  "Dormant enhanced protection json read and write functions" should {
+  "Dormant enhanced protection json read and write functions" when {
     "be an isomorphic pair" in {
       val json = Json.toJson(dormantEnhanced)
       val parsedProtection = Json.fromJson[Protection](json)
@@ -309,30 +310,30 @@ object ProtectionApplicationTestData {
     nonUKRights= Some(0))
 }
 
-class ProtectionApplicationMethodsSpec extends UnitSpec {
+class ProtectionApplicationMethodsSpec extends PlaySpec {
 
   import Protection.Type._
   import ProtectionApplicationTestData._
 
-  "Calling the requestedType method on Fp2016" should {
+  "Calling the requestedType method on Fp2016" when {
     "return FP2016" in {
       Fp2016.requestedType shouldBe Some(FP2016)
     }
   }
 
-  "Calling the requestedType method on Ip2014" should {
+  "Calling the requestedType method on Ip2014" when {
     "return IP2014" in {
       Ip2014.requestedType shouldBe Some(IP2014)
     }
   }
 
-  "Calling the requestedType method on Ip2016" should {
+  "Calling the requestedType method on Ip2016" when {
     "return IP2016" in {
       Ip2016.requestedType shouldBe Some(IP2016)
     }
   }
 
-  "Calling the requestedType method on Fp2014" should {
+  "Calling the requestedType method on Fp2014" when {
     "return None" in {
       Fp2014.requestedType shouldBe None
     }
